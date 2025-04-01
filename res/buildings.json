@@ -1,0 +1,146 @@
+[
+    {
+        "id": "B1",
+        "color": "blue",
+        "cost": 1,
+        "qty": 3
+    },
+    {
+        "id": "B2",
+        "color": "blue",
+        "cost": 2,
+        "qty": 3
+    },
+    {
+        "id": "B3",
+        "color": "blue",
+        "cost": 3,
+        "qty": 3
+    },
+    {
+        "id": "B5",
+        "color": "blue",
+        "cost": 5,
+        "qty": 2
+    },
+    {
+        "id": "G1",
+        "color": "green",
+        "cost": 1,
+        "qty": 5
+    },
+    {
+        "id": "G2",
+        "color": "green",
+        "cost": 2,
+        "qty": 7
+    },
+    {
+        "id": "G4",
+        "color": "green",
+        "cost": 4,
+        "qty": 6
+    },
+    {
+        "id": "G5",
+        "color": "green",
+        "cost": 5,
+        "qty": 2
+    },
+    {
+        "id": "R1",
+        "color": "red",
+        "cost": 1,
+        "qty": 3
+    },
+    {
+        "id": "R2",
+        "color": "red",
+        "cost": 2,
+        "qty": 3
+    },
+    {
+        "id": "R3",
+        "color": "red",
+        "cost": 3,
+        "qty": 3
+    },
+    {
+        "id": "R5",
+        "color": "red",
+        "cost": 5,
+        "qty": 2
+    },
+    {
+        "id": "Y3",
+        "color": "yellow",
+        "cost": 3,
+        "qty": 5
+    },
+    {
+        "id": "Y4",
+        "color": "yellow",
+        "cost": 4,
+        "qty": 4
+    },
+    {
+        "id": "Y5",
+        "color": "yellow",
+        "cost": 5,
+        "qty": 3
+    },
+    {
+        "id": "P_CourtOfWonders",
+        "color": "purple",
+        "cost": 2,
+        "qty": 1
+    },
+    {
+        "id": "P_Workshop",
+        "color": "purple",
+        "cost": 5,
+        "qty": 1
+    },
+    {
+        "id": "P_Lab",
+        "color": "purple",
+        "cost": 5,
+        "qty": 1
+    },
+    {
+        "id": "P_Observatory",
+        "color": "purple",
+        "cost": 5,
+        "qty": 1
+    },
+    {
+        "id": "P_Cemetery",
+        "color": "purple",
+        "cost": 5,
+        "qty": 1
+    },
+    {
+        "id": "P_School",
+        "color": "purple",
+        "cost": 6,
+        "qty": 1
+    },
+    {
+        "id": "P_Library",
+        "color": "purple",
+        "cost": 6,
+        "qty": 1
+    },
+    {
+        "id": "P_DragonGate",
+        "color": "purple",
+        "cost": 6,
+        "qty": 1
+    },
+    {
+        "id": "P_University",
+        "color": "purple",
+        "cost": 6,
+        "qty": 1
+    }
+]

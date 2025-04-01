@@ -1,0 +1,100 @@
+{
+    "buildings": [
+        {
+            "id": "B1",
+            "desc": "Tempel"
+        },
+        {
+            "id": "B2",
+            "desc": "Kerk"
+        },
+        {
+            "id": "B3",
+            "desc": "Klooster"
+        },
+        {
+            "id": "B5",
+            "desc": "Kathedraal"
+        },
+        {
+            "id": "G1",
+            "desc": "Taveerne"
+        },
+        {
+            "id": "G2",
+            "desc": "Markt"
+        },
+        {
+            "id": "G4",
+            "desc": "Haven"
+        },
+        {
+            "id": "G5",
+            "desc": "Raadhuis"
+        },
+        {
+            "id": "R1",
+            "desc": "Wachttoren"
+        },
+        {
+            "id": "R2",
+            "desc": "Gevangenis"
+        },
+        {
+            "id": "R3",
+            "desc": "Toernooiveld"
+        },
+        {
+            "id": "R5",
+            "desc": "Burcht"
+        },
+        {
+            "id": "Y3",
+            "desc": "Landgoed"
+        },
+        {
+            "id": "Y4",
+            "desc": "Kasteel"
+        },
+        {
+            "id": "Y5",
+            "desc": "Paleis"
+        },
+        {
+            "id": "P_CourtOfWonders",
+            "desc": "Hof der Wonderen"
+        },
+        {
+            "id": "P_Workshop",
+            "desc": "Werkplaats"
+        },
+        {
+            "id": "P_Lab",
+            "desc": "Laboratorium"
+        },
+        {
+            "id": "P_Observatory",
+            "desc": "Observatorium"
+        },
+        {
+            "id": "P_Cemetery",
+            "desc": "Kerkhof"
+        },
+        {
+            "id": "P_School",
+            "desc": "School voor magiërs"
+        },
+        {
+            "id": "P_Library",
+            "desc": "Bibliotheek"
+        },
+        {
+            "id": "P_DragonGate",
+            "desc": "Drakenpoort"
+        },
+        {
+            "id": "P_University",
+            "desc": "Universiteit"
+        }
+    ]
+}

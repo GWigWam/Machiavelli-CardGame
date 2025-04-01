@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35919.96 d17.13
+VisualStudioVersion = 17.13.35919.96
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GWigWam.Machiavelli.Core", "GWigWam.Machiavelli.Core\GWigWam.Machiavelli.Core.csproj", "{0012BE23-0878-4957-B21F-3BBCE16693FE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GWigWam.Machiavelli.Res", "GWigWam.Machiavelli.Res\GWigWam.Machiavelli.Res.csproj", "{91304097-9F53-40F4-8C8D-0788C0F923CA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{0012BE23-0878-4957-B21F-3BBCE16693FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0012BE23-0878-4957-B21F-3BBCE16693FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0012BE23-0878-4957-B21F-3BBCE16693FE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{91304097-9F53-40F4-8C8D-0788C0F923CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{91304097-9F53-40F4-8C8D-0788C0F923CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{91304097-9F53-40F4-8C8D-0788C0F923CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{91304097-9F53-40F4-8C8D-0788C0F923CA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
