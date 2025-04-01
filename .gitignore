@@ -1,0 +1,19 @@
+﻿# gitignore
+
+# IDE
+.vs
+*.suo
+*.user
+*.sln.docstates
+
+# Build
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+bld/
+[Bb]in/
+[Oo]bj/
+build/
