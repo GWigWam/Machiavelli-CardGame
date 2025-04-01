@@ -1,0 +1,36 @@
+﻿namespace GWigWam.Machiavelli.Core;
+public class Deck(IEnumerable<BuildingCardInstance> cards)
+{
+    private List<BuildingCardInstance> Pile { get; set; } = [.. cards];
+    private List<BuildingCardInstance> DiscardPile { get; set; } = [];
+
+    public IEnumerable<BuildingCardInstance> ClosedCards => Pile;
+
+    public void Shuffle() => Pile = [.. Pile.OrderBy(_ => Random.Shared.NextDouble())];
+
+    public BuildingCardInstance Draw()
+    {
+        if (Pile.Count == 0)
+        {
+            // Reshuffle
+            Pile = DiscardPile;
+            DiscardPile = [];
+            Shuffle();
+        }
+
+        var draw = Pile[0];
+        Pile.RemoveAt(0);
+        return draw;
+    }
+
+    public IEnumerable<BuildingCardInstance> Draw(int count)
+    {
+        while (count > 0)
+        {
+            yield return Draw();
+            count--;
+        }
+    }
+
+    public void Discard(BuildingCardInstance card) => DiscardPile.Add(card);
+}
