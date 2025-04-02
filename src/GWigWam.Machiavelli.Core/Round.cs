@@ -15,7 +15,18 @@ public class Round(Game game)
 
         var characters = new List<Character>(Character.Known.All);
         ClosedCharacter = characters.RemoveRandomItem();
-        OpenCharacters = [.. characters.RemoveRandomItems(noOpenCharacters)];
+        while (true)
+        {
+            OpenCharacters = [.. characters.RemoveRandomItems(noOpenCharacters)];
+            if (!OpenCharacters.Contains(Character.Known.King)) // King may not be among open cards
+            {
+                break;
+            }
+            else
+            {
+                characters.AddRange(OpenCharacters);
+            }
+        }
 
         var kingIx = Array.IndexOf(game.Players, game.ActingKing);
         for (int i = 0; i < game.NoPlayers; i++)
