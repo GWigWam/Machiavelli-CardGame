@@ -13,12 +13,12 @@ public class Round(Game game)
             _ => 6 - game.NoPlayers
         };
 
-        var characters = new List<Character>(Character.Known.All);
+        var characters = new List<Character>(game.Characters);
         ClosedCharacter = characters.RemoveRandomItem();
         while (true)
         {
             OpenCharacters = [.. characters.RemoveRandomItems(noOpenCharacters)];
-            if (!OpenCharacters.Contains(Character.Known.King)) // King may not be among open cards
+            if (!OpenCharacters.Any(oc => oc.Type == CharacterType.Known.King)) // King may not be among open cards
             {
                 break;
             }

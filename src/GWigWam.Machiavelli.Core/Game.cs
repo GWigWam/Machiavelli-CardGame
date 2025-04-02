@@ -7,10 +7,12 @@ public class Game
     public Player ActingKing { get; private set; }
 
     public Deck Deck { get; }
+    public Character[] Characters { get; }
 
-    public Game(Deck deck, int numOfPlayers)
+    public Game(Deck deck, Character[] characters, int numOfPlayers)
     {
         Deck = deck;
+        Characters = characters;
         Players = [.. Enumerable.Range(0, numOfPlayers).Select(i => new Player(this, i + 1))];
         ActingKing = Players.RandomItem();
     }
