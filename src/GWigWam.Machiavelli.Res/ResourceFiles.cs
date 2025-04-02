@@ -8,10 +8,16 @@ public class ResourceFiles(string directoryPath)
 {
     private readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
-    public async Task Load(string langCode)
+    public async Task<Resources> Load(string langCode)
     {
         var lang = await LoadLang(langCode);
+
         var buildings = await LoadBuildings(lang);
+        var deck = new Deck(buildings);
+
+        var chars = CharacterType.Known.All.Select(c => new Character(c, lang.Characters.TryGetValue($"{c.Id}", out var trans) ? trans : $"{c.Id}")).ToArray();
+
+        return new(deck, chars);
     }
 
     private Task<LangModel> LoadLang(string code)
