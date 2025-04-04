@@ -34,7 +34,7 @@ public class Round(Game game)
             var c = (i + kingIx) % game.NoPlayers;
             var cur = game.Players[c];
 
-            var pick = cur.PickCharacter(characters, i);
+            var pick = game.Controllers[cur].PickCharacter(characters, i);
             characters.Remove(pick);
             Picks[c] = pick;
         }

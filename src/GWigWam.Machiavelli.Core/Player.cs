@@ -18,11 +18,4 @@ public class Player(Game game, int id)
         Hand.AddRange(cards);
         Gold = startingGold;
     }
-
-    public Character PickCharacter(List<Character> characters, int turn)
-    {
-        //TODO implement
-        var pick = characters.RandomItem();
-        return pick;
-    }
 }

@@ -6,6 +6,12 @@ public class Game
     public Player[] Players { get; }
     public Player ActingKing { get; private set; }
 
+    private IReadOnlyDictionary<Player, PlayerController>? controllers;
+    public IReadOnlyDictionary<Player, PlayerController> Controllers {
+        get => controllers ?? throw new InvalidOperationException($"get {nameof(Game)}.{nameof(Controllers)} called, but it has not yet been initialized: do so before starting the game.");
+        set => controllers = controllers == null ? value : throw new InvalidOperationException($"Cannot change {nameof(Controllers)} afer it has been set.");
+    }
+
     public Deck Deck { get; }
     public Character[] Characters { get; }
 
@@ -13,7 +19,7 @@ public class Game
     {
         Deck = deck;
         Characters = characters;
-        Players = [.. Enumerable.Range(0, numOfPlayers).Select(i => new Player(this, i + 1))];
+        Players = [.. Enumerable.Range(0, numOfPlayers).Select(i => new Player(this, id: i + 1))];
         ActingKing = Players.RandomItem();
     }
 
