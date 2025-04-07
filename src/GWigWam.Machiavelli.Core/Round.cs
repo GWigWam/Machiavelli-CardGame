@@ -7,6 +7,7 @@ public class Round(Game game)
     public Character[] Picks { get; } = new Character[game.NoPlayers];
 
     public CharacterType? Assassinated { get; private set; }
+    public CharacterType? Robbed { get; private set; }
 
     public void DistributeCharacters()
     {
@@ -46,6 +47,7 @@ public class Round(Game game)
     {
         if (ClosedCharacter == null) throw new InvalidOperationException($"Cannot run {nameof(Play)} before {nameof(DistributeCharacters)}");
 
+        Player? nextKing = null;
         Action<Player, PlayerController>[] turns = [RunAssassinTurn, RunThiefTurn, RunMagicianTurn, RunKingTurn, RunPreacherTurn, RunMerchantTurn, RunArchitectTurn, RunCondottieroTurn];
         for (int i = 0; i < 8; i++)
         {
@@ -54,14 +56,28 @@ public class Round(Game game)
             {
                 if (pick.Type != Assassinated)
                 {
+                    if (pick.Type == Robbed)
+                    {
+                        var thiefPlayer = game.Players[Array.FindIndex(Picks, p => p.Type == CharacterType.Known.Thief)];
+                        thiefPlayer.Gold += player.Gold;
+                        player.Gold = 0;
+                    }
+
                     var controller = game.Controllers[player];
                     turns[i](player, controller);
                 }
+                else if (pick.Type == CharacterType.Known.King) // Assassinated should still be acting king next round
+                {
+                    nextKing = player;
+                }
             }
         }
+
+        game.ActingKing = nextKing ?? game.ActingKing;
     }
 
     private Action GetGetGoldAction(Player player) => () => player.Gold += 2;
+
     private Action GetGetCardsAction(Player player) => () =>
     {
         var noCards = player.City.Any(c => c.Card.Id == "P_Observatory" /*TODO: consts? event?*/) ? 3 : 2;
@@ -71,37 +87,80 @@ public class Round(Game game)
         player.Hand.AddRange(picked);
     };
 
+    private Action GetGetBuildingsGoldAction(Player player, BuildingColor color) => () => player.Gold += player.City.Where(b => b.Card.Color == color).Count();
+
     private void RunAssassinTurn(Player player, PlayerController controller)
     {
         void assassinate(CharacterType type) => Assassinated = type;
         controller.PlayAssassin(this, new(GetGetGoldAction(player), GetGetCardsAction(player), assassinate));
     }
 
-    private void RunThiefTurn(Player player, PlayerController controller) {
-    
+    private void RunThiefTurn(Player player, PlayerController controller)
+    {
+        void rob(CharacterType type) => Robbed = type;
+        controller.PlayThief(this, new(GetGetGoldAction(player), GetGetCardsAction(player), rob));
     }
 
-    private void RunMagicianTurn(Player player, PlayerController controller) {
-    
+    private void RunMagicianTurn(Player player, PlayerController controller)
+    {
+        void swapWithPlayer(Player other)
+        {
+            BuildingCardInstance[] hSelf = [.. player.Hand], hOther = [.. other.Hand];
+            player.Hand.Clear();
+            player.Hand.AddRange(hOther);
+            other.Hand.Clear();
+            other.Hand.AddRange(hSelf);
+        }
+        void swapWithDeck(IEnumerable<BuildingCardInstance> toSwap)
+        {
+            var rem = player.Hand.Intersect(toSwap).ToArray();
+            player.Hand.RemoveAll(c => rem.Contains(c));
+            game.Deck.Discard(rem);
+            var drawn = game.Deck.Draw(rem.Length);
+            player.Hand.AddRange(drawn);
+        }
+        controller.PlayMagician(this, new(GetGetGoldAction(player), GetGetCardsAction(player), swapWithPlayer, swapWithDeck));
     }
 
-    private void RunKingTurn(Player player, PlayerController controller) {
-    
+    private void RunKingTurn(Player player, PlayerController controller)
+    {
+        game.ActingKing = player;
+        controller.PlayKing(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetGetBuildingsGoldAction(player, BuildingColor.Yellow)));
     }
 
-    private void RunPreacherTurn(Player player, PlayerController controller) {
-    
+    private void RunPreacherTurn(Player player, PlayerController controller)
+    {
+        controller.PlayPreacher(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetGetBuildingsGoldAction(player, BuildingColor.Blue)));
     }
 
-    private void RunMerchantTurn(Player player, PlayerController controller) {
-    
+    private void RunMerchantTurn(Player player, PlayerController controller)
+    {
+        void getExtraGold() => player.Gold += 1;
+        controller.PlayMerchant(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetGetBuildingsGoldAction(player, BuildingColor.Green), getExtraGold));
     }
 
-    private void RunArchitectTurn(Player player, PlayerController controller) {
-    
+    private void RunArchitectTurn(Player player, PlayerController controller)
+    {
+        void getTwoBuildingCards()
+        {
+            var cards = game.Deck.Draw(2);
+            player.Hand.AddRange(cards);
+        }
+        controller.PlayArchitect(this, new(GetGetGoldAction(player), GetGetCardsAction(player), getTwoBuildingCards));
     }
 
-    private void RunCondottieroTurn(Player player, PlayerController controller) { 
-    
+    private void RunCondottieroTurn(Player player, PlayerController controller)
+    {
+        void destroyBuilding(BuildingCardInstance building)
+        {
+            var target = game.Players.First(p => p.City.Contains(building));
+            if(player.Gold >= building.Card.Cost && Picks[Array.IndexOf(game.Players, target)].Type != CharacterType.Known.Preacher)
+            {
+                player.Gold -= building.Card.Cost;
+                target.City.Remove(building);
+                game.Deck.Discard(building);
+            }
+        }
+        controller.PlayCondottiero(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetGetBuildingsGoldAction(player, BuildingColor.Red), destroyBuilding));
     }
 }

@@ -33,4 +33,12 @@ public class Deck(IEnumerable<BuildingCardInstance> cards)
     }
 
     public void Discard(BuildingCardInstance card) => DiscardPile.Add(card);
+
+    public void Discard(IEnumerable<BuildingCardInstance> cards)
+    {
+        foreach (var card in cards)
+        {
+            Discard(card);
+        }
+    }
 }

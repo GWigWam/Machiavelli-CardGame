@@ -4,7 +4,7 @@ public class Game
     public int NoPlayers => Players.Length;
 
     public Player[] Players { get; }
-    public Player ActingKing { get; private set; }
+    public Player ActingKing { get; set; }
 
     private IReadOnlyDictionary<Player, PlayerController>? controllers;
     public IReadOnlyDictionary<Player, PlayerController> Controllers {
