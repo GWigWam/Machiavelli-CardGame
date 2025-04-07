@@ -1,6 +1,12 @@
-﻿namespace GWigWam.Machiavelli.Core;
-public class Round(Game game)
+﻿using System.Diagnostics;
+
+namespace GWigWam.Machiavelli.Core;
+
+[DebuggerDisplay("Round {Number}")]
+public class Round(Game game, int number)
 {
+    public int Number { get; } = number;
+
     public Character? ClosedCharacter { get; private set; }
     public Character[]? OpenCharacters { get; private set; }
 
