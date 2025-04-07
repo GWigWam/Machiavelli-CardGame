@@ -5,6 +5,8 @@ public class Round(Game game)
     public Character[]? OpenCharacters { get; private set; }
 
     public Character[] Picks { get; } = new Character[game.NoPlayers];
+    public IReadOnlyDictionary<Player, Character> PlayerPick => 
+        game.Players.Select((p, ix) => (p, pick: Picks[ix])).ToDictionary(t => t.p, t => t.pick);
 
     public CharacterType? Assassinated { get; private set; }
     public CharacterType? Robbed { get; private set; }
@@ -58,7 +60,7 @@ public class Round(Game game)
                 {
                     if (pick.Type == Robbed)
                     {
-                        var thiefPlayer = game.Players[Array.FindIndex(Picks, p => p.Type == CharacterType.Known.Thief)];
+                        var thiefPlayer = PlayerPick.First(kvp => kvp.Value.Type == CharacterType.Known.Thief).Key;
                         thiefPlayer.Gold += player.Gold;
                         player.Gold = 0;
                     }
@@ -154,7 +156,7 @@ public class Round(Game game)
         void destroyBuilding(BuildingCardInstance building)
         {
             var target = game.Players.First(p => p.City.Contains(building));
-            if(player.Gold >= building.Card.Cost && Picks[Array.IndexOf(game.Players, target)].Type != CharacterType.Known.Preacher)
+            if(player.Gold >= building.Card.Cost && PlayerPick[target].Type != CharacterType.Known.Preacher)
             {
                 player.Gold -= building.Card.Cost;
                 target.City.Remove(building);

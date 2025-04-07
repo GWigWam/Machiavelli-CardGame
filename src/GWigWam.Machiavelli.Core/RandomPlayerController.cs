@@ -100,7 +100,7 @@ public class RandomPlayerController(Game game, Player player) : PlayerController
         if (Random.Shared.NextDouble() > 0.5)
         {
             var targets = game.Players
-                .Where(p => p != player && round.Picks[Array.IndexOf(game.Players, p)].Type != CharacterType.Known.Preacher)
+                .Where(p => p != player && round.PlayerPick[p].Type != CharacterType.Known.Preacher)
                 .SelectMany(p => p.City)
                 .Where(b => b.Card.Cost <= player.Gold)
                 .ToArray();

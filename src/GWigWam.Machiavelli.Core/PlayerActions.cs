@@ -34,7 +34,7 @@ public class ColoredPlayerActions : BasePlayerActions
     public Action GetBuildingsGold { get; }
 
     public ColoredPlayerActions(Action getGold, Action getCards, Action getBuildingsGold) : base(getGold, getCards)
-    {
+{
         GetBuildingsGold = getBuildingsGold;
     }
 }
