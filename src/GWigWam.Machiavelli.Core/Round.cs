@@ -91,16 +91,28 @@ public class Round(Game game)
 
     private Action GetGetBuildingsGoldAction(Player player, BuildingColor color) => () => player.Gold += player.City.Where(b => b.Card.Color == color).Count();
 
+    private Func<BuildingCardInstance, bool> GetBuildAction(Player player) => (BuildingCardInstance card) =>
+    {
+        if (player.Hand.Contains(card) && player.Gold >= card.Card.Cost)
+        {
+            player.Gold -= card.Card.Cost;
+            player.Hand.Remove(card);
+            player.City.Add(card);
+            return true;
+        }
+        return false;
+    };
+
     private void RunAssassinTurn(Player player, PlayerController controller)
     {
         void assassinate(CharacterType type) => Assassinated = type;
-        controller.PlayAssassin(this, new(GetGetGoldAction(player), GetGetCardsAction(player), assassinate));
+        controller.PlayAssassin(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetBuildAction(player), assassinate));
     }
 
     private void RunThiefTurn(Player player, PlayerController controller)
     {
         void rob(CharacterType type) => Robbed = type;
-        controller.PlayThief(this, new(GetGetGoldAction(player), GetGetCardsAction(player), rob));
+        controller.PlayThief(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetBuildAction(player), rob));
     }
 
     private void RunMagicianTurn(Player player, PlayerController controller)
@@ -121,24 +133,24 @@ public class Round(Game game)
             var drawn = game.Deck.Draw(rem.Length);
             player.Hand.AddRange(drawn);
         }
-        controller.PlayMagician(this, new(GetGetGoldAction(player), GetGetCardsAction(player), swapWithPlayer, swapWithDeck));
+        controller.PlayMagician(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetBuildAction(player), swapWithPlayer, swapWithDeck));
     }
 
     private void RunKingTurn(Player player, PlayerController controller)
     {
         game.ActingKing = player;
-        controller.PlayKing(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetGetBuildingsGoldAction(player, BuildingColor.Yellow)));
+        controller.PlayKing(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetBuildAction(player), GetGetBuildingsGoldAction(player, BuildingColor.Yellow)));
     }
 
     private void RunPreacherTurn(Player player, PlayerController controller)
     {
-        controller.PlayPreacher(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetGetBuildingsGoldAction(player, BuildingColor.Blue)));
+        controller.PlayPreacher(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetBuildAction(player), GetGetBuildingsGoldAction(player, BuildingColor.Blue)));
     }
 
     private void RunMerchantTurn(Player player, PlayerController controller)
     {
         void getExtraGold() => player.Gold += 1;
-        controller.PlayMerchant(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetGetBuildingsGoldAction(player, BuildingColor.Green), getExtraGold));
+        controller.PlayMerchant(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetBuildAction(player), GetGetBuildingsGoldAction(player, BuildingColor.Green), getExtraGold));
     }
 
     private void RunArchitectTurn(Player player, PlayerController controller)
@@ -148,7 +160,7 @@ public class Round(Game game)
             var cards = game.Deck.Draw(2);
             player.Hand.AddRange(cards);
         }
-        controller.PlayArchitect(this, new(GetGetGoldAction(player), GetGetCardsAction(player), getTwoBuildingCards));
+        controller.PlayArchitect(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetBuildAction(player), getTwoBuildingCards));
     }
 
     private void RunCondottieroTurn(Player player, PlayerController controller)
@@ -163,6 +175,6 @@ public class Round(Game game)
                 game.Deck.Discard(building);
             }
         }
-        controller.PlayCondottiero(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetGetBuildingsGoldAction(player, BuildingColor.Red), destroyBuilding));
+        controller.PlayCondottiero(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetBuildAction(player), GetGetBuildingsGoldAction(player, BuildingColor.Red), destroyBuilding));
     }
 }
