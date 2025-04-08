@@ -8,22 +8,28 @@ public class ResourceFiles(string directoryPath)
 {
     private readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
-    public async Task<Resources> Load(string langCode)
+    public async Task<Func<Resources>> Load(string langCode)
     {
         var lang = await LoadLang(langCode);
+        var buildingCards = await LoadBuildings(lang);
 
-        var buildings = await LoadBuildings(lang);
-        var deck = new Deck(buildings);
+        Resources factory()
+        {
+            var buildings = buildingCards.SelectMany(t => t.card.Instantiate(t.qty)).ToArray();
+            var deck = new Deck(buildings);
 
-        var chars = CharacterType.Known.All.Select(c => new Character(c, lang.Characters.TryGetValue($"{c.Id}", out var trans) ? trans : $"{c.Id}")).ToArray();
+            var chars = CharacterType.Known.All
+                .Select(c => new Character(c, lang.Characters.TryGetValue($"{c.Id}", out var trans) ? trans : $"{c.Id}")).ToArray();
 
-        return new(deck, chars);
+            return new(deck, chars);
+        }
+        return factory;
     }
 
     private Task<LangModel> LoadLang(string code)
         => ReadJsonFile<LangModel>($"lang_{code}");
 
-    private async Task<BuildingCardInstance[]> LoadBuildings(LangModel lang)
+    private async Task<(BuildingCard card, int qty)[]> LoadBuildings(LangModel lang)
     {
         var json = await ReadJsonFile<JsonArray>("buildings");
         var parsed = json
@@ -49,13 +55,7 @@ public class ResourceFiles(string directoryPath)
             throw new Exception($"Duplicate building key '{duplicate}'");
         }
 
-        return [..
-            parsed
-                .Select(m =>
-                    new BuildingCard(m.id, cardDescOrId(m.id), m.color, m.cost)
-                        .Instantiate(m.qty))
-                .SelectMany(a => a)
-        ];
+        return [.. parsed.Select(m => (new BuildingCard(m.id, cardDescOrId(m.id), m.color, m.cost), m.qty))];
 
         string cardDescOrId(string id)
             => lang.Buildings.FirstOrDefault(b => string.Equals(b.Id, id, StringComparison.OrdinalIgnoreCase))?.Desc
