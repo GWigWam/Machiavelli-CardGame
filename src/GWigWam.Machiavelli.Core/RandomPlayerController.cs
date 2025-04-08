@@ -13,7 +13,7 @@ public class RandomPlayerController(Game game, Player player) : PlayerController
 
     private void PlayGeneric(BasePlayerActions actions)
     {
-        if (Random.Shared.NextDouble() > 0.33)
+        if (!game.Deck.CanDraw || Random.Shared.NextDouble() > 0.33)
         {
             actions.GetGold();
         }

@@ -5,11 +5,17 @@ public class Deck(IEnumerable<BuildingCardInstance> cards)
     private List<BuildingCardInstance> DiscardPile { get; set; } = [];
 
     public IEnumerable<BuildingCardInstance> ClosedCards => Pile;
+    public bool CanDraw => Pile.Count > 0 || DiscardPile.Count > 0;
 
     public void Shuffle() => Pile = [.. Pile.OrderBy(_ => Random.Shared.NextDouble())];
 
     public BuildingCardInstance Draw()
     {
+        if (!CanDraw)
+        {
+            throw new InvalidOperationException($"Out of cards! Check {nameof(Deck)}.{nameof(CanDraw)} before drawing.");
+        }
+
         if (Pile.Count == 0)
         {
             // Reshuffle
@@ -25,7 +31,7 @@ public class Deck(IEnumerable<BuildingCardInstance> cards)
 
     public IEnumerable<BuildingCardInstance> Draw(int count)
     {
-        while (count > 0)
+        while (CanDraw && count > 0)
         {
             yield return Draw();
             count--;
