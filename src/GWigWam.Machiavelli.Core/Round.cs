@@ -88,8 +88,8 @@ public class Round(Game game, int number)
 
     private Action GetGetCardsAction(Player player) => () =>
     {
-        var noCards = player.City.Any(c => c.Card.Id == "P_Observatory" /*TODO: consts? event?*/) ? 3 : 2;
-        var noToPick = player.City.Any(c => c.Card.Id == "P_Library" /*TODO: consts? event?*/) ? noCards /* Rules say 'keep both', unclear what this means in conjunction with Observatory. Executive descision: keep all. */ : 1;
+        var noCards = player.City.Any(c => c.Card.Id == BuildingCardIds.Observatory) ? 3 : 2;
+        var noToPick = player.City.Any(c => c.Card.Id == BuildingCardIds.Library) ? noCards /* Rules say 'keep both', unclear what this means in conjunction with Observatory. Executive descision: keep all. */ : 1;
         var cards = game.Deck.Draw(noCards).ToArray();
         var picked = game.Controllers[player].PickBuildingCards(cards, noToPick).Take(noToPick).ToArray();
         player.Hand.AddRange(picked);

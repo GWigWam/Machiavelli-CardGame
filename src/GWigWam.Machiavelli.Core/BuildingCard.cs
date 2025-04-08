@@ -15,3 +15,10 @@ public enum BuildingColor {
     Yellow,
     Purple
 }
+
+public static class BuildingCardIds
+{
+    public const string Observatory = "P_Observatory";
+    public const string Library = "P_Library";
+    public const string CourtOfWonders = "P_CourtOfWonders";
+}
