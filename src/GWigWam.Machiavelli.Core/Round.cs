@@ -105,6 +105,10 @@ public class Round(Game game, int number)
             player.Gold -= card.Card.Cost;
             player.Hand.Remove(card);
             player.City.Add(card);
+            if(player.City.Count == 8) // Game ends when one player has 8 buildings
+            {
+                game.Finished.Add(player);
+            }
             return true;
         }
         return false;

@@ -21,4 +21,7 @@ public static class BuildingCardIds
     public const string Observatory = "P_Observatory";
     public const string Library = "P_Library";
     public const string School = "P_School";
+    public const string CourtOfWonders = "P_CourtOfWonders";
+    public const string DragonGate = "P_DragonGate";
+    public const string University = "P_University";
 }

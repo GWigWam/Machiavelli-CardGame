@@ -15,6 +15,8 @@ public class Game
     public Deck Deck { get; }
     public Character[] Characters { get; }
 
+    public List<Player> Finished { get; } = [];
+
     public List<Round> Rounds { get; } = [];
 
     public Game(Deck deck, Character[] characters, int numOfPlayers)
@@ -48,6 +50,6 @@ public class Game
         round.DistributeCharacters();
         round.Play();
 
-        return Players.Any(p => p.City.Count >= 8); // Game ends when one player has 8 buildings
+        return Finished.Count > 0;
     }
 }
