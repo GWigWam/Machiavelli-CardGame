@@ -95,7 +95,8 @@ public class Round(Game game, int number)
         player.Hand.AddRange(picked);
     };
 
-    private Action GetGetBuildingsGoldAction(Player player, BuildingColor color) => () => player.Gold += player.City.Where(b => b.Card.Color == color).Count();
+    private Action GetGetBuildingsGoldAction(Player player, BuildingColor color)
+        => () => player.Gold += player.City.Where(b => b.Card.Color == color || b.Card.Id == BuildingCardIds.School).Count();
 
     private Func<BuildingCardInstance, bool> GetBuildAction(Player player) => (BuildingCardInstance card) =>
     {
