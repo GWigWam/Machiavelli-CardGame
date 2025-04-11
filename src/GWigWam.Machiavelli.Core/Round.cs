@@ -5,6 +5,21 @@ namespace GWigWam.Machiavelli.Core;
 [DebuggerDisplay("Round {Number}")]
 public class Round(Game game, int number)
 {
+    public event Action? BeforeCharacterPicks;
+    public event Action<Player, Character>? OnPlayerTurn;
+    public event Action<Player>? OnGetGoldAction;
+    public event Action<Player, BuildingCardInstance[]>? OnGetCardsAction;
+    public event Action<Player, BuildingColor, int>? OnGetBuildingsGoldAction;
+    public event Action<Player, BuildingCardInstance>? OnBuild;
+    public event Action<Player, CharacterType>? OnAssassinateAction;
+    public event Action<Player, CharacterType>? OnRobAction;
+    public event Action<Player, Player>? OnMagicianSwapWithPlayerAction;
+    public event Action<Player, int>? OnMagicianSwapWithDeckAction;
+    public event Action<Player>? OnClaimKingship;
+    public event Action<Player>? OnMerchantGetExtraGoldAction;
+    public event Action<Player, BuildingCardInstance[]>? OnArchitectGetBuildingCardsAction;
+    public event Action<Player, Player, BuildingCardInstance>? OnCondottieroDestroyBuildingAction;
+
     public int Number { get; } = number;
 
     public Character? ClosedCharacter { get; private set; }
@@ -39,6 +54,7 @@ public class Round(Game game, int number)
             }
         }
 
+        BeforeCharacterPicks?.Invoke();
         var kingIx = Array.IndexOf(game.Players, game.ActingKing);
         for (int i = 0; i < game.NoPlayers; i++)
         {
@@ -62,6 +78,7 @@ public class Round(Game game, int number)
             (Character, Player)? curTurn = Array.FindIndex(Picks, p => p.Type.Id == i + 1) is int ix and >= 0 ? (Picks[ix], game.Players[ix]) : null;
             if (curTurn is (var pick, var player))
             {
+                OnPlayerTurn?.Invoke(player, pick);
                 if (pick.Type != Assassinated)
                 {
                     if (pick.Type == Robbed)
@@ -84,7 +101,11 @@ public class Round(Game game, int number)
         game.ActingKing = nextKing ?? game.ActingKing;
     }
 
-    private Action GetGetGoldAction(Player player) => () => player.Gold += 2;
+    private Action GetGetGoldAction(Player player) => () =>
+    {
+        player.Gold += 2;
+        OnGetGoldAction?.Invoke(player);
+    };
 
     private Action GetGetCardsAction(Player player) => () =>
     {
@@ -93,10 +114,18 @@ public class Round(Game game, int number)
         var cards = game.Deck.Draw(noCards).ToArray();
         var picked = game.Controllers[player].PickBuildingCards(cards, noToPick).Take(noToPick).ToArray();
         player.Hand.AddRange(picked);
+        OnGetCardsAction?.Invoke(player, picked);
     };
 
-    private Action GetGetBuildingsGoldAction(Player player, BuildingColor color)
-        => () => player.Gold += player.City.Where(b => b.Card.Color == color || b.Card.Id == BuildingCardIds.School).Count();
+    private Action GetGetBuildingsGoldAction(Player player, BuildingColor color) => () =>
+    {
+        var g = player.City.Where(b => b.Card.Color == color || b.Card.Id == BuildingCardIds.School).Count();
+        if (g > 0)
+        {
+            player.Gold += g;
+            OnGetBuildingsGoldAction?.Invoke(player, color, g);
+        }
+    };
 
     private Func<BuildingCardInstance, bool> GetBuildAction(Player player) => (BuildingCardInstance card) =>
     {
@@ -105,7 +134,8 @@ public class Round(Game game, int number)
             player.Gold -= card.Card.Cost;
             player.Hand.Remove(card);
             player.City.Add(card);
-            if(player.City.Count == 8) // Game ends when one player has 8 buildings
+            OnBuild?.Invoke(player, card);
+            if (player.City.Count == 8) // Game ends when one player has 8 buildings
             {
                 game.Finished.Add(player);
             }
@@ -116,13 +146,21 @@ public class Round(Game game, int number)
 
     private void RunAssassinTurn(Player player, PlayerController controller)
     {
-        void assassinate(CharacterType type) => Assassinated = type;
+        void assassinate(CharacterType type)
+        {
+            Assassinated = type;
+            OnAssassinateAction?.Invoke(player, type);
+        }
         controller.PlayAssassin(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetBuildAction(player), assassinate));
     }
 
     private void RunThiefTurn(Player player, PlayerController controller)
     {
-        void rob(CharacterType type) => Robbed = type;
+        void rob(CharacterType type)
+        {
+            Robbed = type;
+            OnRobAction?.Invoke(player, type);
+        }
         controller.PlayThief(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetBuildAction(player), rob));
     }
 
@@ -135,14 +173,16 @@ public class Round(Game game, int number)
             player.Hand.AddRange(hOther);
             other.Hand.Clear();
             other.Hand.AddRange(hSelf);
+            OnMagicianSwapWithPlayerAction?.Invoke(player, other);
         }
         void swapWithDeck(IEnumerable<BuildingCardInstance> toSwap)
         {
             var rem = player.Hand.Intersect(toSwap).ToArray();
             player.Hand.RemoveAll(c => rem.Contains(c));
             game.Deck.Discard(rem);
-            var drawn = game.Deck.Draw(rem.Length);
+            var drawn = game.Deck.Draw(rem.Length).ToArray();
             player.Hand.AddRange(drawn);
+            OnMagicianSwapWithDeckAction?.Invoke(player, drawn.Length);
         }
         controller.PlayMagician(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetBuildAction(player), swapWithPlayer, swapWithDeck));
     }
@@ -150,6 +190,7 @@ public class Round(Game game, int number)
     private void RunKingTurn(Player player, PlayerController controller)
     {
         game.ActingKing = player;
+        OnClaimKingship?.Invoke(player);
         controller.PlayKing(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetBuildAction(player), GetGetBuildingsGoldAction(player, BuildingColor.Yellow)));
     }
 
@@ -160,7 +201,11 @@ public class Round(Game game, int number)
 
     private void RunMerchantTurn(Player player, PlayerController controller)
     {
-        void getExtraGold() => player.Gold += 1;
+        void getExtraGold()
+        {
+            player.Gold += 1;
+            OnMerchantGetExtraGoldAction?.Invoke(player);
+        }
         controller.PlayMerchant(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetBuildAction(player), GetGetBuildingsGoldAction(player, BuildingColor.Green), getExtraGold));
     }
 
@@ -168,8 +213,9 @@ public class Round(Game game, int number)
     {
         void getTwoBuildingCards()
         {
-            var cards = game.Deck.Draw(2);
+            var cards = game.Deck.Draw(2).ToArray();
             player.Hand.AddRange(cards);
+            OnArchitectGetBuildingCardsAction?.Invoke(player, cards);
         }
         controller.PlayArchitect(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetBuildAction(player), getTwoBuildingCards));
     }
@@ -184,6 +230,7 @@ public class Round(Game game, int number)
                 player.Gold -= building.Card.Cost;
                 target.City.Remove(building);
                 game.Deck.Discard(building);
+                OnCondottieroDestroyBuildingAction?.Invoke(player, target, building);
             }
         }
         controller.PlayCondottiero(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetBuildAction(player), GetGetBuildingsGoldAction(player, BuildingColor.Red), destroyBuilding));

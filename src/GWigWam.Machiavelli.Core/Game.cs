@@ -1,6 +1,12 @@
 ﻿namespace GWigWam.Machiavelli.Core;
 public class Game
 {
+    public event Action? AfterSetup;
+    public event Action<Round>? OnNewRound;
+    public event Action<Round>? OnRoundStart;
+    public event Action<Round>? AfterRound;
+    public event Action? GameOver;
+
     public int NoPlayers => Players.Length;
 
     public Player[] Players { get; }
@@ -39,6 +45,8 @@ public class Game
             var cards = Deck.Draw(startingHand);
             player.Setup(cards, startingGold);
         }
+
+        AfterSetup?.Invoke();
     }
 
     /// <returns>Boolean indicating game end</returns>
@@ -47,9 +55,17 @@ public class Game
         var num = Rounds.Count + 1;
         var round = new Round(this, num);
         Rounds.Add(round);
+        OnNewRound?.Invoke(round);
         round.DistributeCharacters();
+        OnRoundStart?.Invoke(round);
         round.Play();
+        AfterRound?.Invoke(round);
 
-        return Finished.Count > 0;
+        if (Finished.Count > 0)
+        {
+            GameOver?.Invoke();
+            return true;
+        }
+        return false;
     }
 }
