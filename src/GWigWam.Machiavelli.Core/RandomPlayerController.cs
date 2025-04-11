@@ -40,8 +40,8 @@ public class RandomPlayerController(Game game, Player player) : PlayerController
 
     public override void PlayAssassin(Round round, AssassinActions actions)
     {
-        var kill = CharacterType.Known.All
-            .Where(c => c != CharacterType.Known.Assassin)
+        var kill = game.Characters
+            .Where(c => c.Type != CharacterType.Known.Assassin)
             .RandomItem();
         actions.Assassinate(kill);
         PlayGeneric(actions);
@@ -49,8 +49,8 @@ public class RandomPlayerController(Game game, Player player) : PlayerController
 
     public override void PlayThief(Round round, ThiefActions actions)
     {
-        var rob = CharacterType.Known.All
-            .Where(c => c != CharacterType.Known.Assassin && c != CharacterType.Known.Thief && c != round.Assassinated)
+        var rob = game.Characters
+            .Where(c => c.Type != CharacterType.Known.Assassin && c.Type != CharacterType.Known.Thief && c != round.Assassinated)
             .RandomItem();
         actions.Steal(rob);
         PlayGeneric(actions);

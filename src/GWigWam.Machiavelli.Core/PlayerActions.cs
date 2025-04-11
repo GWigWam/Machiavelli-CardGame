@@ -49,14 +49,14 @@ public class ColoredPlayerActions(Action getGold, Action getCards, Func<Building
     public Action GetBuildingsGold { get; } = getBuildingsGold;
 }
 
-public class AssassinActions(Action getGold, Action getCards, Func<BuildingCardInstance, bool> build, Action<CharacterType> assassinate) : BasePlayerActions(getGold, getCards, build)
+public class AssassinActions(Action getGold, Action getCards, Func<BuildingCardInstance, bool> build, Action<Character> assassinate) : BasePlayerActions(getGold, getCards, build)
 {
-    public Action<CharacterType> Assassinate => assassinate;
+    public Action<Character> Assassinate => assassinate;
 }
 
-public class ThiefActions(Action getGold, Action getCards, Func<BuildingCardInstance, bool> build, Action<CharacterType> steal) : BasePlayerActions(getGold, getCards, build)
+public class ThiefActions(Action getGold, Action getCards, Func<BuildingCardInstance, bool> build, Action<Character> steal) : BasePlayerActions(getGold, getCards, build)
 {
-    public Action<CharacterType> Steal => steal;
+    public Action<Character> Steal => steal;
 }
 
 public class MagicianActions : BasePlayerActions

@@ -11,8 +11,8 @@ public class Round(Game game, int number)
     public event Action<Player, BuildingCardInstance[]>? OnGetCardsAction;
     public event Action<Player, BuildingColor, int>? OnGetBuildingsGoldAction;
     public event Action<Player, BuildingCardInstance>? OnBuild;
-    public event Action<Player, CharacterType>? OnAssassinateAction;
-    public event Action<Player, CharacterType>? OnRobAction;
+    public event Action<Player, Character>? OnAssassinateAction;
+    public event Action<Player, Character>? OnRobAction;
     public event Action<Player, Player>? OnMagicianSwapWithPlayerAction;
     public event Action<Player, int>? OnMagicianSwapWithDeckAction;
     public event Action<Player>? OnClaimKingship;
@@ -29,8 +29,8 @@ public class Round(Game game, int number)
     public IReadOnlyDictionary<Player, Character> PlayerPick => 
         game.Players.Select((p, ix) => (p, pick: Picks[ix])).ToDictionary(t => t.p, t => t.pick);
 
-    public CharacterType? Assassinated { get; private set; }
-    public CharacterType? Robbed { get; private set; }
+    public Character? Assassinated { get; private set; }
+    public Character? Robbed { get; private set; }
 
     public void DistributeCharacters()
     {
@@ -79,9 +79,9 @@ public class Round(Game game, int number)
             if (curTurn is (var pick, var player))
             {
                 OnPlayerTurn?.Invoke(player, pick);
-                if (pick.Type != Assassinated)
+                if (pick != Assassinated)
                 {
-                    if (pick.Type == Robbed)
+                    if (pick == Robbed)
                     {
                         var thiefPlayer = PlayerPick.First(kvp => kvp.Value.Type == CharacterType.Known.Thief).Key;
                         thiefPlayer.Gold += player.Gold;
@@ -146,20 +146,20 @@ public class Round(Game game, int number)
 
     private void RunAssassinTurn(Player player, PlayerController controller)
     {
-        void assassinate(CharacterType type)
+        void assassinate(Character target)
         {
-            Assassinated = type;
-            OnAssassinateAction?.Invoke(player, type);
+            Assassinated = target;
+            OnAssassinateAction?.Invoke(player, Assassinated);
         }
         controller.PlayAssassin(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetBuildAction(player), assassinate));
     }
 
     private void RunThiefTurn(Player player, PlayerController controller)
     {
-        void rob(CharacterType type)
+        void rob(Character target)
         {
-            Robbed = type;
-            OnRobAction?.Invoke(player, type);
+            Robbed = target;
+            OnRobAction?.Invoke(player, Robbed);
         }
         controller.PlayThief(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetBuildAction(player), rob));
     }
@@ -227,7 +227,7 @@ public class Round(Game game, int number)
             var target = game.Players.First(p => p.City.Contains(building));
             if(player.Gold >= building.Card.Cost && PlayerPick[target].Type != CharacterType.Known.Preacher)
             {
-                player.Gold -= building.Card.Cost;
+                player.Gold -= building.Card.Cost - 1;
                 target.City.Remove(building);
                 game.Deck.Discard(building);
                 OnCondottieroDestroyBuildingAction?.Invoke(player, target, building);

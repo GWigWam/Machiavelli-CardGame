@@ -10,6 +10,8 @@ public class Character(CharacterType type, string description)
 
     public override int GetHashCode() => Type.Id;
     public override bool Equals(object? obj) => obj is Character ch && ch.Type.Id == Type.Id;
+
+    public static implicit operator CharacterType(Character character) => character.Type;
 }
 
 public class CharacterType

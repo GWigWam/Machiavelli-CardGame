@@ -4,6 +4,8 @@ public record BuildingCard(string Id, string Description, BuildingColor Color, i
 {
     public BuildingCardInstance[] Instantiate(int count)
         => [.. Enumerable.Range(0, count).Select(i => new BuildingCardInstance(this, count, i))];
+
+    public static implicit operator BuildingCard(BuildingCardInstance inst) => inst.Card;
 }
 
 public record BuildingCardInstance(BuildingCard Card, int TotalNumber, int Id);
