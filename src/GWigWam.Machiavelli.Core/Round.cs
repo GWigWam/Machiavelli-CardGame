@@ -61,6 +61,12 @@ public class Round(Game game, int number)
             var c = (i + kingIx) % game.NoPlayers;
             var cur = game.Players[c];
 
+            if (game.NoPlayers == 7 && i == 6)
+            {
+                characters.Add(ClosedCharacter!); // 7th player picks from remaing card in deck + closed card
+                ClosedCharacter = null;
+            }
+
             var pick = game.Controllers[cur].PickCharacter(characters, i);
             characters.Remove(pick);
             Picks[c] = pick;
@@ -69,8 +75,6 @@ public class Round(Game game, int number)
 
     public void Play()
     {
-        if (ClosedCharacter == null) throw new InvalidOperationException($"Cannot run {nameof(Play)} before {nameof(DistributeCharacters)}");
-
         Player? nextKing = null;
         Action<Player, PlayerController>[] turns = [RunAssassinTurn, RunThiefTurn, RunMagicianTurn, RunKingTurn, RunPreacherTurn, RunMerchantTurn, RunArchitectTurn, RunCondottieroTurn];
         for (int i = 0; i < 8; i++)
