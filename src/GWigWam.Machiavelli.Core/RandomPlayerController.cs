@@ -1,6 +1,6 @@
 ﻿
 namespace GWigWam.Machiavelli.Core;
-public class RandomPlayerController(Game game, Player player) : PlayerController(player)
+public class RandomPlayerController(Game game, Player player) : PlayerController
 {
     public override Character PickCharacter(List<Character> characters, int turn)
     {

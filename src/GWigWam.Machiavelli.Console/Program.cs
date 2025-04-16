@@ -1,4 +1,5 @@
-﻿using GWigWam.Machiavelli.Core;
+﻿using GWigWam.Machiavelli.Console;
+using GWigWam.Machiavelli.Core;
 using GWigWam.Machiavelli.Res;
 using Spectre.Console;
 
@@ -16,29 +17,19 @@ var noPlayers = AnsiConsole.Prompt(new TextPrompt<int>("Number of players: ").Va
 
 var game = new Game(deck, chars, noPlayers);
 game.Setup();
-game.Controllers = game.Players.Select(p => (p, c: new RandomPlayerController(game, p))).ToDictionary(t => t.p, t => (PlayerController)t.c);
+var controllerDict = game.Players.Select(p => (p, c: new RandomPlayerController(game, p))).ToDictionary(t => t.p, t => (PlayerController)t.c);
+controllerDict[game.Players[0]] = new ConsolePlayerController(game, game.Players[0]);
+game.Controllers = controllerDict;
 
 game.OnNewRound += r => {
     AnsiConsole.MarkupLine($"\nRound {r.Number}");
+
+    r.BeforeCharacterPicks += () => AnsiConsole.MarkupLine($"Unavailable cards | Open: {string.Join(" ", r.OpenCharacters!.Select(c => $"[[{c.ToMarkup()}]]"))} | Closed: [[[white]:flower_playing_cards:???[/]]]");
 };
 
-string[] pCol = ["blue", "red", "green", "yellow", "fuchsia", "cyan", "darkorange"];
-string pMarkup(Player p) => $"[{pCol[Array.IndexOf(game.Players, p)]}]P{p.Id}[/]";
-static string bcs(BuildingColor c) => c switch { BuildingColor.Blue => "blue", BuildingColor.Green => "green", BuildingColor.Red => "red", BuildingColor.Yellow => "yellow", _ => "fuchsia" };
-string bMarkup(BuildingCard c) => $"[[[{bcs(c.Color)}]{c.Description}[/] [bold]{c.Cost}[/]]]";
-string cIcon(CharacterType t) =>
-    t == CharacterType.Known.Assassin ? ":skull:" :
-    t == CharacterType.Known.Thief ? ":ninja:" :
-    t == CharacterType.Known.Magician ? ":sparkles:" :
-    t == CharacterType.Known.King ? ":crown:" :
-    t == CharacterType.Known.Preacher ? ":folded_hands:" :
-    t == CharacterType.Known.Merchant ? ":money_bag:" :
-    t == CharacterType.Known.Architect ? ":classical_building:" :
-    t == CharacterType.Known.Condottiero ? ":crossed_swords:" : "";
-string cMarkup(Character c) => $"[white]{cIcon(c)} {c.Description}[/]";
 void sumPlayer(int ix, Player p)
 {
-    AnsiConsole.MarkupLine($":bust_in_silhouette: {pMarkup(p)} {p.Gold}:coin: {p.Hand.Count}:flower_playing_cards:{(game.ActingKing == p ? " :crown:" : "")} {string.Join(" ", p.City.Select(i => bMarkup(i)))}");
+    AnsiConsole.MarkupLine($"{(game.ActingKing == p ? " :crown:" : " :bust_in_silhouette:")} {p.ToMarkup(game)} {p.Gold}:coin: {p.Hand.Count}:flower_playing_cards: | [{(p.City.Count >= 7 ? "orangered1": "default")}]{p.City.Count}[/]/{p.Score:D2}p: {string.Join(" ", p.City.Select(i => i.Card.ToMarkup()))}");
 }
 void sumAllP()
 {
@@ -47,30 +38,30 @@ void sumAllP()
         sumPlayer(px, game.Players[px]);
     }
 }
-game.OnRoundStart += r => {
-    AnsiConsole.MarkupLine($"Unavailable cards | Open: {string.Join(" ", r.OpenCharacters!.Select(c => $"[[{cMarkup(c)}]]"))} | Closed: [[[white]:flower_playing_cards:???[/]]]");
-    sumAllP();
-    r.OnPlayerTurn += (p, c) => AnsiConsole.MarkupLine($"Turn {cMarkup(c)} {pMarkup(p)}");
-    r.OnGetGoldAction += p => AnsiConsole.MarkupLine($"{pMarkup(p)} receives +2:coin: ({p.Gold}:coin:)");
-    r.OnGetCardsAction += (p, c) => AnsiConsole.MarkupLine($"{pMarkup(p)} draws +{c.Length}:flower_playing_cards: ({p.Hand.Count}:flower_playing_cards:)");
-    r.OnGetBuildingsGoldAction += (p, c, g) => AnsiConsole.MarkupLine($"{pMarkup(p)} receives +{g}:coin: ({c} buildings) ({p.Gold}:coin:)");
-    r.OnBuild += (p, b) => AnsiConsole.MarkupLine($"{pMarkup(p)} builds {bMarkup(b)} ({p.Gold}:coin: {p.Hand.Count}:flower_playing_cards: left)");
+game.OnNewRound += r => sumAllP();
 
-    r.OnAssassinateAction += (p, c) => AnsiConsole.MarkupLine($"{pMarkup(p)} assassinates {cMarkup(c)}");
-    r.OnRobAction += (p, c) => AnsiConsole.MarkupLine($"{pMarkup(p)} robs {cMarkup(c)}");
-    r.OnMagicianSwapWithPlayerAction += (pSelf, pOther) => AnsiConsole.MarkupLine($"{pMarkup(pSelf)} swaps hand cards with {pMarkup(pOther)}");
-    r.OnMagicianSwapWithDeckAction += (p, cards) => AnsiConsole.MarkupLine($"{pMarkup(p)} swaps {cards} with deck");
-    r.OnClaimKingship += p => AnsiConsole.MarkupLine($"{pMarkup(p)} is the new king!");
-    r.OnMerchantGetExtraGoldAction += p => AnsiConsole.MarkupLine($"{pMarkup(p)} receives +1:coin: extra ({p.Gold}:coin:)");
-    r.OnArchitectGetBuildingCardsAction += (p, c) => AnsiConsole.MarkupLine($"{pMarkup(p)} draws +{c.Length}:flower_playing_cards: ({p.Hand.Count}:flower_playing_cards:)");
-    r.OnCondottieroDestroyBuildingAction += (pSelf, pOther, b) => AnsiConsole.MarkupLine($"{pMarkup(pSelf)} destroys {pMarkup(pOther)}'s {bMarkup(b)}");
+game.OnRoundStart += r => {
+    r.OnPlayerTurn += (p, c) => AnsiConsole.MarkupLine($"Turn {c.ToMarkup()} {p.ToMarkup(game)}");
+    r.OnGetGoldAction += p => AnsiConsole.MarkupLine($"{p.ToMarkup(game)} receives +2:coin: ({p.Gold}:coin:)");
+    r.OnGetCardsAction += (p, c) => AnsiConsole.MarkupLine($"{p.ToMarkup(game)} draws +{c.Length}:flower_playing_cards: ({p.Hand.Count}:flower_playing_cards:)");
+    r.OnGetBuildingsGoldAction += (p, c, g) => AnsiConsole.MarkupLine($"{p.ToMarkup(game)} receives +{g}:coin: ({c} buildings) ({p.Gold}:coin:)");
+    r.OnBuild += (p, b) => AnsiConsole.MarkupLine($"{p.ToMarkup(game)} builds {b.Card.ToMarkup()} ({p.Gold}:coin: {p.Hand.Count}:flower_playing_cards: left)");
+
+    r.OnAssassinateAction += (p, c) => AnsiConsole.MarkupLine($"{p.ToMarkup(game)} assassinates {c.ToMarkup()}");
+    r.OnRobAction += (p, c) => AnsiConsole.MarkupLine($"{p.ToMarkup(game)} robs {c.ToMarkup()}");
+    r.OnMagicianSwapWithPlayerAction += (pSelf, pOther) => AnsiConsole.MarkupLine($"{pSelf.ToMarkup(game)} swaps hand cards with {pOther.ToMarkup(game)}");
+    r.OnMagicianSwapWithDeckAction += (p, cards) => AnsiConsole.MarkupLine($"{p.ToMarkup(game)} swaps {cards} with deck");
+    r.OnClaimKingship += p => AnsiConsole.MarkupLine($"{p.ToMarkup(game)} is the new king!");
+    r.OnMerchantGetExtraGoldAction += p => AnsiConsole.MarkupLine($"{p.ToMarkup(game)} receives +1:coin: extra ({p.Gold}:coin:)");
+    r.OnArchitectGetBuildingCardsAction += (p, c) => AnsiConsole.MarkupLine($"{p.ToMarkup(game)} draws +{c.Length}:flower_playing_cards: ({p.Hand.Count}:flower_playing_cards:)");
+    r.OnCondottieroDestroyBuildingAction += (pSelf, pOther, b) => AnsiConsole.MarkupLine($"{pSelf.ToMarkup(game)} destroys {pOther.ToMarkup(game)}'s {b.Card.ToMarkup()} :fire:");
 };
 game.GameOver += () => {
     AnsiConsole.MarkupLine($"\n[red]Game over![/]");
     sumAllP();
     foreach (var (p, ix) in game.Players.OrderByDescending(t => t.Score).Select((t, ix) => (t, ix)))
     {
-        AnsiConsole.MarkupLine($"#{ix+1} {pMarkup(p)} Score: [bold white]{p.Score}[/]");
+        AnsiConsole.MarkupLine($"#{ix+1} {p.ToMarkup(game)} Score: [bold white]{p.Score}[/]");
     }
 };
 
