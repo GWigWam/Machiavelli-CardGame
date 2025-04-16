@@ -222,16 +222,19 @@ public class Round(Game game, int number)
 
     private void RunCondottieroTurn(Player player, PlayerController controller)
     {
-        void destroyBuilding(BuildingCardInstance building)
+        bool destroyBuilding(BuildingCardInstance building)
         {
             var target = game.Players.First(p => p.City.Contains(building));
-            if(player.Gold >= building.Card.Cost && PlayerPick[target].Type != CharacterType.Known.Preacher)
+            var destCost = building.Card.Cost - 1;
+            if (player.Gold >= destCost && PlayerPick[target].Type != CharacterType.Known.Preacher)
             {
-                player.Gold -= building.Card.Cost - 1;
+                player.Gold -= destCost;
                 target.City.Remove(building);
                 game.Deck.Discard(building);
                 OnCondottieroDestroyBuildingAction?.Invoke(player, target, building);
+                return true;
             }
+            return false;
         }
         controller.PlayCondottiero(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetBuildAction(player), GetGetBuildingsGoldAction(player, BuildingColor.Red), destroyBuilding));
     }

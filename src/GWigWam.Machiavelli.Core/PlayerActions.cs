@@ -44,9 +44,22 @@ public class BasePlayerActions
     }
 }
 
-public class ColoredPlayerActions(Action getGold, Action getCards, Func<BuildingCardInstance, bool> build, Action getBuildingsGold) : BasePlayerActions(getGold, getCards, build)
+public class ColoredPlayerActions : BasePlayerActions
 {
-    public Action GetBuildingsGold { get; } = getBuildingsGold;
+    public bool GotBuildingsGold { get; private set; }
+    public Action GetBuildingsGold { get; }
+
+    public ColoredPlayerActions(Action getGold, Action getCards, Func<BuildingCardInstance, bool> build, Action getBuildingsGold) : base(getGold, getCards, build)
+    {
+        GetBuildingsGold = () =>
+        {
+            if (!GotBuildingsGold)
+            {
+                getBuildingsGold();
+                GotBuildingsGold = true;
+            }
+        };
+    }
 }
 
 public class AssassinActions(Action getGold, Action getCards, Func<BuildingCardInstance, bool> build, Action<Character> assassinate) : BasePlayerActions(getGold, getCards, build)
@@ -93,17 +106,55 @@ public class KingActions(Action getGold, Action getCards, Func<BuildingCardInsta
 
 public class PreacherActions(Action getGold, Action getCards, Func<BuildingCardInstance, bool> build, Action getBuildingsGold) : ColoredPlayerActions(getGold, getCards, build, getBuildingsGold);
 
-public class MerchantActions(Action getGold, Action getCards, Func<BuildingCardInstance, bool> build, Action getBuildingsGold, Action getExtraGold) : ColoredPlayerActions(getGold, getCards, build, getBuildingsGold)
+public class MerchantActions : ColoredPlayerActions
 {
-    public Action GetExtraGold { get; } = getExtraGold;
+    public bool GotExtraGold { get; private set; }
+    public Action GetExtraGold { get; }
+
+    public MerchantActions(Action getGold, Action getCards, Func<BuildingCardInstance, bool> build, Action getBuildingsGold, Action getExtraGold) : base(getGold, getCards, build, getBuildingsGold)
+    {
+        GetExtraGold = () =>
+        {
+            if (!GotExtraGold)
+            {
+                getExtraGold();
+                GotExtraGold = true;
+            }
+        };
+    }
 }
 
-public class ArchitectActions(Action getGold, Action getCards, Func<BuildingCardInstance, bool> build, Action getTwoBuildingCards) : BasePlayerActions(getGold, getCards, build, maxBuiltBuildings: 3)
+public class ArchitectActions : BasePlayerActions
 {
-    public Action GetTwoBuildingCards { get; } = getTwoBuildingCards;
+    public bool GotTwoBuildingCards { get; private set; }
+    public Action GetTwoBuildingCards { get; }
+
+    public ArchitectActions(Action getGold, Action getCards, Func<BuildingCardInstance, bool> build, Action getTwoBuildingCards) : base(getGold, getCards, build, maxBuiltBuildings: 3)
+    {
+        GetTwoBuildingCards = () =>
+        {
+            if (!GotTwoBuildingCards)
+            {
+                getTwoBuildingCards();
+                GotTwoBuildingCards = true;
+            }
+        };
+    }
 }
 
-public class CondottieroActions(Action getGold, Action getCards, Func<BuildingCardInstance, bool> build, Action getBuildingsGold, Action<BuildingCardInstance> destroyBuilding) : ColoredPlayerActions(getGold, getCards, build, getBuildingsGold)
+public class CondottieroActions : ColoredPlayerActions
 {
-    public Action<BuildingCardInstance> DestroyBuilding { get; } = destroyBuilding;
+    public bool DidDestroyBuilding { get; private set; }
+    public Action<BuildingCardInstance> DestroyBuilding { get; }
+
+    public CondottieroActions(Action getGold, Action getCards, Func<BuildingCardInstance, bool> build, Action getBuildingsGold, Func<BuildingCardInstance, bool> destroyBuilding) : base(getGold, getCards, build, getBuildingsGold)
+    {
+        DestroyBuilding = b =>
+        {
+            if (!DidDestroyBuilding)
+            {
+                DidDestroyBuilding = destroyBuilding(b);
+            }
+        };
+    }
 }
