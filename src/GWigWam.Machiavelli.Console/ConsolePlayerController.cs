@@ -36,12 +36,19 @@ internal class ConsolePlayerController : PlayerController
                     AnsiConsole.MarkupLine($"\t:money_with_wings: [red]You have been robbed![/]");
                 }
             };
+            r.OnCondottieroDestroyBuildingAction += (s, t, c) =>
+            {
+                if(t == Self)
+                {
+                    AnsiConsole.MarkupLine($"\t:fire: [red]Your building has been destroyed![/]");
+                }
+            };
         };
     }
 
     private static string Nth(int n) => n switch { 1 => "1st", 2 => "2nd", var i => $"{i}th" };
 
-    public override Character PickCharacter(List<Character> characters, int turn) => AnsiConsole.Prompt(
+    public override Character PickCharacter(Round round, List<Character> characters, int turn) => AnsiConsole.Prompt(
         new SelectionPrompt<Character>()
             .Title($"Pick your character ({Nth(turn + 1)} pick)")
             .AddChoices(characters)
@@ -67,6 +74,9 @@ internal class ConsolePlayerController : PlayerController
         bool stop = false;
         AnsiConsole.MarkupLine($"Round {round.Number}. Your turn! Gold: {Self.Gold}:coin: Hand: {string.Join(" ", Self.Hand.Select(c => c.Card.ToMarkup()))}");
 
+        var drawNoCards = Gameplay.GetPlayerNoCardsToDraw(Self);
+        var drawNoToPick = Gameplay.GetPlayerNoCardsToPick(Self, drawNoCards);
+
         List<PAct> actions =
         [
             ("Get Gold", once: true, () =>
@@ -74,7 +84,7 @@ internal class ConsolePlayerController : PlayerController
                 baseActions.GetGold();
                 AnsiConsole.MarkupLine($"You now have {Self.Gold}:coin:");
             }),
-            ("Get Cards", once: true, () =>
+            ($"Get Cards (keep {drawNoToPick}/{drawNoCards})", once: true, () =>
             {
                 baseActions.GetCards();
                 AnsiConsole.MarkupLine($"You now have {Self.Hand.Count}:flower_playing_cards: Hand: {string.Join(" ", Self.Hand.Select(c => c.Card.ToMarkup()))}");

@@ -2,7 +2,7 @@
 namespace GWigWam.Machiavelli.Core;
 public class RandomPlayerController(Game game, Player player) : PlayerController
 {
-    public override Character PickCharacter(List<Character> characters, int turn)
+    public override Character PickCharacter(Round round, List<Character> characters, int turn)
     {
         var pick = characters.RandomItem();
         return pick;

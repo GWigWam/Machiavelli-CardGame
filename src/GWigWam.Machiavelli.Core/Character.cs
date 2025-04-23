@@ -25,16 +25,28 @@ public class CharacterType
         Color = color;
     }
 
+    public static class Ids
+    {
+        public const int Assassin = 1;
+        public const int Thief = 2;
+        public const int Magician = 3;
+        public const int King = 4;
+        public const int Preacher = 5;
+        public const int Merchant = 6;
+        public const int Architect = 7;
+        public const int Condottiero = 8;
+    }
+
     public static class Known
     {
-        public static CharacterType Assassin { get; } = new(1, CharacterColor.None);
-        public static CharacterType Thief { get; } = new(2, CharacterColor.None);
-        public static CharacterType Magician { get; } = new(3, CharacterColor.None);
-        public static CharacterType King { get; } = new(4, CharacterColor.Yellow);
-        public static CharacterType Preacher { get; } = new(5, CharacterColor.Blue);
-        public static CharacterType Merchant { get; } = new(6, CharacterColor.Green);
-        public static CharacterType Architect { get; } = new(7, CharacterColor.None);
-        public static CharacterType Condottiero { get; } = new(8, CharacterColor.Red);
+        public static CharacterType Assassin { get; } = new(Ids.Assassin, CharacterColor.None);
+        public static CharacterType Thief { get; } = new(Ids.Thief, CharacterColor.None);
+        public static CharacterType Magician { get; } = new(Ids.Magician, CharacterColor.None);
+        public static CharacterType King { get; } = new(Ids.King, CharacterColor.Yellow);
+        public static CharacterType Preacher { get; } = new(Ids.Preacher, CharacterColor.Blue);
+        public static CharacterType Merchant { get; } = new(Ids.Merchant, CharacterColor.Green);
+        public static CharacterType Architect { get; } = new(Ids.Architect, CharacterColor.None);
+        public static CharacterType Condottiero { get; } = new(Ids.Condottiero, CharacterColor.Red);
 
         public static CharacterType[] All { get; } = [Assassin, Thief, Magician, King, Preacher, Merchant, Architect, Condottiero];
     }

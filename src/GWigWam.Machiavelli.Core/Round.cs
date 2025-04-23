@@ -67,7 +67,7 @@ public class Round(Game game, int number)
                 ClosedCharacter = null;
             }
 
-            var pick = game.Controllers[cur].PickCharacter(characters, i);
+            var pick = game.Controllers[cur].PickCharacter(this, characters, i);
             characters.Remove(pick);
             Picks[c] = pick;
         }
@@ -113,8 +113,8 @@ public class Round(Game game, int number)
 
     private Action GetGetCardsAction(Player player) => () =>
     {
-        var noCards = player.City.Any(c => c.Card.Id == BuildingCardIds.Observatory) ? 3 : 2;
-        var noToPick = player.City.Any(c => c.Card.Id == BuildingCardIds.Library) ? noCards /* Rules say 'keep both', unclear what this means in conjunction with Observatory. Executive descision: keep all. */ : 1;
+        var noCards = Gameplay.GetPlayerNoCardsToDraw(player);
+        var noToPick = Gameplay.GetPlayerNoCardsToPick(player, noCards);
         var cards = game.Deck.Draw(noCards).ToArray();
         var picked = game.Controllers[player].PickBuildingCards(cards, noToPick).Take(noToPick).ToArray();
         player.Hand.AddRange(picked);
@@ -123,8 +123,7 @@ public class Round(Game game, int number)
 
     private Action GetGetBuildingsGoldAction(Player player, BuildingColor color) => () =>
     {
-        var g = player.City.Where(b => b.Card.Color == color || b.Card.Id == BuildingCardIds.School).Count();
-        if (g > 0)
+        if (Gameplay.CalcBuildingIncome(player.City, color) is var g and > 0)
         {
             player.Gold += g;
             OnGetBuildingsGoldAction?.Invoke(player, color, g);

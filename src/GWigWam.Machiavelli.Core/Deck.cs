@@ -1,6 +1,8 @@
 ﻿namespace GWigWam.Machiavelli.Core;
 public class Deck(IEnumerable<BuildingCardInstance> cards)
 {
+    public readonly BuildingCardInstance[] AllCards = [.. cards];
+
     private List<BuildingCardInstance> Pile { get; set; } = [.. cards];
     private List<BuildingCardInstance> DiscardPile { get; set; } = [];
 

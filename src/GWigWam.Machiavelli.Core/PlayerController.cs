@@ -1,7 +1,7 @@
 ﻿namespace GWigWam.Machiavelli.Core;
 public abstract class PlayerController
 {
-    public abstract Character PickCharacter(List<Character> characters, int turn);
+    public abstract Character PickCharacter(Round round, List<Character> characters, int turn);
 
     public abstract IEnumerable<BuildingCardInstance> PickBuildingCards(BuildingCardInstance[] cards, int count);
 
