@@ -17,7 +17,7 @@ var noPlayers = AnsiConsole.Prompt(new TextPrompt<int>("Number of players: ").Va
 
 var game = new Game(deck, chars, noPlayers);
 game.Setup();
-var controllerDict = game.Players.Select(p => (p, c: new RandomPlayerController(game, p))).ToDictionary(t => t.p, t => (PlayerController)t.c);
+var controllerDict = game.Players.Select(p => (p, c: new AiPlayerController(game, p))).ToDictionary(t => t.p, t => (PlayerController)t.c);
 controllerDict[game.Players[0]] = new ConsolePlayerController(game, game.Players[0]);
 game.Controllers = controllerDict;
 
