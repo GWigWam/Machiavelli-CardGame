@@ -63,7 +63,7 @@ public class Round(Game game, int number)
 
             if (game.NoPlayers == 7 && i == 6)
             {
-                characters.Add(ClosedCharacter!); // 7th player picks from remaing card in deck + closed card
+                characters.Add(ClosedCharacter!); // 7th player picks from remaining card in deck + closed card
                 ClosedCharacter = null;
             }
 
@@ -161,8 +161,11 @@ public class Round(Game game, int number)
     {
         void rob(Character target)
         {
-            Robbed = target;
-            OnRobAction?.Invoke(player, Robbed);
+            if (target.Type != CharacterType.Known.Assassin && target != Assassinated)
+            {
+                Robbed = target;
+                OnRobAction?.Invoke(player, Robbed);
+            }
         }
         controller.PlayThief(this, new(GetGetGoldAction(player), GetGetCardsAction(player), GetBuildAction(player), rob));
     }
