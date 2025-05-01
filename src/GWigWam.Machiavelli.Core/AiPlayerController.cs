@@ -7,7 +7,7 @@ public class AiPlayerController(Game game, Player player) : PlayerController
 
     public override Character PickCharacter(Round round, List<Character> characters, int turn)
     {
-        var pi = PickInfo = new(game, round, player, characters, turn);
+        var pi = PickInfo = new(game, round, characters, turn);
         var rgtCnt = pi.RightHand.Length;
         var lftCnt = pi.LeftHand.Length;
 
@@ -464,8 +464,6 @@ public class AiPlayerController(Game game, Player player) : PlayerController
     private class PickPositionInfo
     {
         public Character[] Available { get; }
-        public Player King { get; }
-        public int Turn { get; }
 
         public Player[] RightHand { get; }
         public Player[] LeftHand { get; }
@@ -473,18 +471,14 @@ public class AiPlayerController(Game game, Player player) : PlayerController
         public Character[] PossibleRightCharacters { get; }
         public Character[] PossibleCharacters { get; }
 
-        public PickPositionInfo(Game game, Round round, Player self, List<Character> available, int turn)
+        public PickPositionInfo(Game game, Round round, List<Character> available, int turn)
         {
             Available = [.. available];
-            King = game.ActingKing;
-            Turn = turn;
 
-            var kingIx = Array.IndexOf(game.Players, King);
-            int[] adjIx = [.. Enumerable.Range(0, game.NoPlayers).Select(i => (i + kingIx) % game.NoPlayers)];
-            RightHand = [.. adjIx.Take(turn).Select(i => game.Players[i])];
-            LeftHand = [.. adjIx.Skip(turn + 1).Select(i => game.Players[i])];
+            RightHand = [.. round.PickOrder.Take(turn)];
+            LeftHand = [.. round.PickOrder.Skip(turn + 1)];
 
-            PossibleRightCharacters = [.. game.Characters.Except(available).Except(round.OpenCharacters!)];
+            PossibleRightCharacters = turn == 0 ? [] : [.. game.Characters.Except(available).Except(round.OpenCharacters!)];
             PossibleCharacters = [.. PossibleRightCharacters, .. available];
         }
     }

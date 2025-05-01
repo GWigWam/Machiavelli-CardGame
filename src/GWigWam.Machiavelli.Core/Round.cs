@@ -25,12 +25,15 @@ public class Round(Game game, int number)
     public Character? ClosedCharacter { get; private set; }
     public Character[]? OpenCharacters { get; private set; }
 
-    public Character[] Picks { get; } = new Character[game.NoPlayers];
-    public IReadOnlyDictionary<Player, Character> PlayerPick => 
-        game.Players.Select((p, ix) => (p, pick: Picks[ix])).ToDictionary(t => t.p, t => t.pick);
+    private Dictionary<Player, Character> _PlayerPicks = [];
+    public IReadOnlyDictionary<Player, Character> PlayerPick => _PlayerPicks;
+    public Dictionary<Character, Player> CharacterPlayerMap => _PlayerPicks.ToDictionary(kvp => kvp.Value, kvp => kvp.Key);
 
     public Character? Assassinated { get; private set; }
     public Character? Robbed { get; private set; }
+
+    public Player RoundKing { get; } = game.ActingKing;
+    public Player[] PickOrder { get; private set; } = [];
 
     public void DistributeCharacters()
     {
@@ -55,21 +58,19 @@ public class Round(Game game, int number)
         }
 
         BeforeCharacterPicks?.Invoke();
-        var kingIx = Array.IndexOf(game.Players, game.ActingKing);
-        for (int i = 0; i < game.NoPlayers; i++)
+        var kingIx = Array.IndexOf(game.Players, RoundKing);
+        PickOrder = [.. Enumerable.Range(0, game.NoPlayers).Select(i => (i + kingIx) % game.NoPlayers).Select(ix => game.Players[ix])];
+        foreach (var (player, turn) in PickOrder.Select((p, ix) => (p, ix)))
         {
-            var c = (i + kingIx) % game.NoPlayers;
-            var cur = game.Players[c];
-
-            if (game.NoPlayers == 7 && i == 6)
+            if (game.NoPlayers == 7 && turn == 6)
             {
                 characters.Add(ClosedCharacter!); // 7th player picks from remaining card in deck + closed card
                 ClosedCharacter = null;
             }
 
-            var pick = game.Controllers[cur].PickCharacter(this, characters, i);
+            var pick = game.Controllers[player].PickCharacter(this, characters, turn);
             characters.Remove(pick);
-            Picks[c] = pick;
+            _PlayerPicks[player] = pick;
         }
     }
 
@@ -79,8 +80,9 @@ public class Round(Game game, int number)
         Action<Player, PlayerController>[] turns = [RunAssassinTurn, RunThiefTurn, RunMagicianTurn, RunKingTurn, RunPreacherTurn, RunMerchantTurn, RunArchitectTurn, RunCondottieroTurn];
         for (int i = 0; i < 8; i++)
         {
-            (Character, Player)? curTurn = Array.FindIndex(Picks, p => p.Type.Id == i + 1) is int ix and >= 0 ? (Picks[ix], game.Players[ix]) : null;
-            if (curTurn is (var pick, var player))
+            var pick = game.Characters[i];
+            var player = CharacterPlayerMap.TryGetValue(pick, out var fnd) ? fnd : null;
+            if (player != null)
             {
                 OnPlayerTurn?.Invoke(player, pick);
                 if (pick != Assassinated)
