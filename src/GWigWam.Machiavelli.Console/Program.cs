@@ -12,8 +12,19 @@ var load = res.Load("nl");
 var resFactory = await AnsiConsole.Status()
     .StartAsync("Loading...", _ => load);
 
-AnsiConsole.Prompt(new SelectionPrompt<(string txt, Action act)>()
-    .AddChoices(
-        ("Single game", () => ConsoleGame.Run(resFactory)))
-    .UseConverter(t => t.txt))
-    .act();
+Action single = () => ConsoleGame.Run(resFactory);
+Action anl = () => Analysis.Run(resFactory);
+
+if (args.Any(a => a.TrimStart('-', '/').Equals("anl", StringComparison.OrdinalIgnoreCase)))
+{
+    anl();
+}
+else
+{
+    AnsiConsole.Prompt(new SelectionPrompt<(string, Action)>()
+        .AddChoices(
+            ("Single game", single),
+            ("Analysis", anl))
+        .UseConverter(t => t.Item1))
+        .Item2();
+}
