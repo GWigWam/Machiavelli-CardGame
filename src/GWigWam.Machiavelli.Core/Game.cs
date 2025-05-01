@@ -5,7 +5,7 @@ public class Game
     public event Action<Round>? OnNewRound;
     public event Action<Round>? OnRoundStart;
     public event Action<Round>? AfterRound;
-    public event Action? GameOver;
+    public event Action<Player[]>? GameOver;
 
     public int NoPlayers => Players.Length;
 
@@ -63,9 +63,15 @@ public class Game
 
         if (Finished.Count > 0)
         {
-            GameOver?.Invoke();
+            var standings = GetStandings();
+            GameOver?.Invoke(standings);
             return true;
         }
         return false;
     }
+
+    private Player[] GetStandings() => [.. Players
+        .OrderByDescending(p => p.Score)
+        .ThenByDescending(p => p.CityScore) // Rule: In case of tie highest score exc. bonuses wins
+        .ThenByDescending(p => p.Gold)]; // Not in the rules, but if it's still a tie order by gold
 }

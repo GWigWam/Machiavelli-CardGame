@@ -63,13 +63,13 @@ public static class ConsoleGame
             r.OnCondottieroDestroyBuildingAction += (pSelf, pOther, b) => AnsiConsole.MarkupLine($"{pSelf.ToMarkup(game)} destroys {pOther.ToMarkup(game)}'s {b.Card.ToMarkup()} :fire:");
         };
 
-        game.GameOver += () => {
+        game.GameOver += standings => {
             AnsiConsole.MarkupLine($"\n[red]Game over![/]");
             sumrAllPlayers();
 
-            foreach (var (p, ix) in game.Players.OrderByDescending(t => t.Score).Select((t, ix) => (t, ix)))
+            foreach (var (p, ix) in standings.Select((t, ix) => (t, ix)))
             {
-                AnsiConsole.MarkupLine($"#{ix+1} {p.ToMarkup(game)} Score: [bold white]{p.Score}[/]");
+                AnsiConsole.MarkupLine($"#{ix+1} {p.ToMarkup(game)} Score: [bold white]{p.Score}[/] (Buildings: {p.CityScore}{(game.Finished.Contains(p) ? game.Finished.First() == p ? " + 4 (finished first)" : " + 2 (finished later)" : "")}{(p.HasAllColorsBonus ? " + 3 (colors bonus)" : "")})");
             }
         };
     }

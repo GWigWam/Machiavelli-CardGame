@@ -18,6 +18,7 @@ public class Player(Game game, int id)
             (City.Any(b => b.Card.Id == BuildingCardIds.CourtOfWonders) && City.Where(c => c.Card.Id != BuildingCardIds.CourtOfWonders).Select(c => c.Card.Color).Distinct().Count() == 4); // Court of Wonders bonus: counts as any 1 color at the end of the game;
     }
 
+    public int CityScore => City.Sum(b => b.Card.Id == BuildingCardIds.DragonGate || b.Card.Id == BuildingCardIds.University ? b.Card.Cost + 2 : b.Card.Cost);
     public int Score => CalcScore();
 
     public void Setup(IEnumerable<BuildingCardInstance> cards, int startingGold)
@@ -34,7 +35,7 @@ public class Player(Game game, int id)
 
         var fBonus = game.Finished.FirstOrDefault() == this ? finishFirstBonus : game.Finished.Contains(this) ? finishLaterBonus : 0;
         var cBonus = HasAllColorsBonus ? allColorsBonus : 0;
-        var city = City.Sum(b => b.Card.Id == BuildingCardIds.DragonGate || b.Card.Id == BuildingCardIds.University ? b.Card.Cost + 2 : b.Card.Cost);
+        var city = CityScore;
 
         return fBonus + cBonus + city;
     }
