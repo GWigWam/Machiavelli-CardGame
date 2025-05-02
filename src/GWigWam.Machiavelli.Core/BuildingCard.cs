@@ -1,14 +1,14 @@
 ﻿namespace GWigWam.Machiavelli.Core;
 
-public record BuildingCard(string Id, string Description, BuildingColor Color, int Cost)
+public record BuildingCard(string Id, string Description, BuildingColor Color, int Cost, int Count)
 {
-    public BuildingCardInstance[] Instantiate(int count)
-        => [.. Enumerable.Range(0, count).Select(i => new BuildingCardInstance(this, count, i))];
+    public BuildingCardInstance[] Instantiate()
+        => [.. Enumerable.Range(0, Count).Select(i => new BuildingCardInstance(this, i))];
 
     public static implicit operator BuildingCard(BuildingCardInstance inst) => inst.Card;
 }
 
-public record BuildingCardInstance(BuildingCard Card, int TotalNumber, int Id);
+public record BuildingCardInstance(BuildingCard Card, int Id);
 
 public enum BuildingColor {
     Blue,

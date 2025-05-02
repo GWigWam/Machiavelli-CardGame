@@ -15,7 +15,7 @@ public class ResourceFiles(string directoryPath)
 
         Resources factory()
         {
-            var buildings = buildingCards.SelectMany(t => t.card.Instantiate(t.qty)).ToArray();
+            var buildings = buildingCards.SelectMany(t => t.Instantiate()).ToArray();
             var deck = new Deck(buildings);
 
             var chars = CharacterType.Known.All
@@ -29,7 +29,7 @@ public class ResourceFiles(string directoryPath)
     private Task<LangModel> LoadLang(string code)
         => ReadJsonFile<LangModel>($"lang_{code}");
 
-    private async Task<(BuildingCard card, int qty)[]> LoadBuildings(LangModel lang)
+    private async Task<BuildingCard[]> LoadBuildings(LangModel lang)
     {
         var json = await ReadJsonFile<JsonArray>("buildings");
         var parsed = json
@@ -55,7 +55,7 @@ public class ResourceFiles(string directoryPath)
             throw new Exception($"Duplicate building key '{duplicate}'");
         }
 
-        return [.. parsed.Select(m => (new BuildingCard(m.id, cardDescOrId(m.id), m.color, m.cost), m.qty))];
+        return [.. parsed.Select(m => new BuildingCard(m.id, cardDescOrId(m.id), m.color, m.cost, m.qty))];
 
         string cardDescOrId(string id)
             => lang.Buildings.FirstOrDefault(b => string.Equals(b.Id, id, StringComparison.OrdinalIgnoreCase))?.Desc
