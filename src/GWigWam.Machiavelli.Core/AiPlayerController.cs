@@ -51,10 +51,11 @@ public class AiPlayerController(Game game, Player player) : PlayerController
         var tradeCardsScore = tradeCardsWin * Strategy.Pick_Mage_CardTradeWinMult * (needCards ? Strategy.Pick_Mage_NeedCardsMult : Strategy.Pick_Mage_DontNeedCardsMult);
 
         // King / colored
-        var kingGoldScore = Gameplay.CalcBuildingIncome(player.City, BuildingColor.Yellow) * Strategy.Pick_ExtraGoldMult;
-        var preacherGoldScore = Gameplay.CalcBuildingIncome(player.City, BuildingColor.Blue) * Strategy.Pick_ExtraGoldMult;
-        var merchantGoldScore = (Gameplay.CalcBuildingIncome(player.City, BuildingColor.Green) + 1) * Strategy.Pick_ExtraGoldMult;
-        var condottieroGoldScore = Gameplay.CalcBuildingIncome(player.City, BuildingColor.Red) * Strategy.Pick_ExtraGoldMult;
+        var extraGoldNeededMult = player.Gold < 4 ? 1 : 0;
+        var kingGoldScore = Gameplay.CalcBuildingIncome(player.City, BuildingColor.Yellow) * Strategy.Pick_ExtraGoldMult * extraGoldNeededMult;
+        var preacherGoldScore = Gameplay.CalcBuildingIncome(player.City, BuildingColor.Blue) * Strategy.Pick_ExtraGoldMult * extraGoldNeededMult;
+        var merchantGoldScore = (Gameplay.CalcBuildingIncome(player.City, BuildingColor.Green) + 1) * Strategy.Pick_ExtraGoldMult * extraGoldNeededMult;
+        var condottieroGoldScore = Gameplay.CalcBuildingIncome(player.City, BuildingColor.Red) * Strategy.Pick_ExtraGoldMult * extraGoldNeededMult;
 
         // Preacher
         var protect1CostBuildingsScore = player.City.Any(c => c.Card.Cost <= 1) ? Strategy.Pick_Preacher_Protect1CostBuildingsScore : 0;
@@ -193,11 +194,11 @@ public class AiPlayerController(Game game, Player player) : PlayerController
             var score = c.Type.Id switch
             {
                 CharacterType.Ids.Thief => game.Players.Any(p => p.Gold >= 4) ? 2 : 1,
-                CharacterType.Ids.Magician => target.Hand.Count < 3 ? 2 : 1,
-                CharacterType.Ids.King => Gameplay.CalcBuildingIncome(target.City, BuildingColor.Yellow) is var by and > 0 ? (1.0 + (by / 2.0)) : 1,
+                CharacterType.Ids.Magician => target.Hand.Count < 3 ? 0.5 : 0.2,
+                CharacterType.Ids.King => Gameplay.CalcBuildingIncome(target.City, BuildingColor.Yellow) is var by and > 0 ? (1.5 + (by / 2.0)) : 1.5,
                 CharacterType.Ids.Preacher => Gameplay.CalcBuildingIncome(target.City, BuildingColor.Blue) is var bb and > 0 ? (1.0 + (bb / 2.0)) : 1,
-                CharacterType.Ids.Merchant => Gameplay.CalcBuildingIncome(target.City, BuildingColor.Green) is var bg and > 0 ? (1.5 + (bg / 2.0)) : 1.5,
-                CharacterType.Ids.Architect => target.Hand.Count < 3 ? 3 : 1.5,
+                CharacterType.Ids.Merchant => Gameplay.CalcBuildingIncome(target.City, BuildingColor.Green) is var bg and > 0 ? (2 + (bg / 2.0)) : 2,
+                CharacterType.Ids.Architect => 1,
                 CharacterType.Ids.Condottiero => Gameplay.CalcBuildingIncome(target.City, BuildingColor.Red) is var br and > 0 ? (1.0 + (br / 2.0)) : 1,
                 _ => 1
             };
@@ -212,16 +213,18 @@ public class AiPlayerController(Game game, Player player) : PlayerController
         var hitChance = 1.0 / possibleChars.Length;
         var killCompetitorScore = hitChance * Strategy.Assassin_KillCompetitor_100pBaseScore * (competitor.Score > player.Score ? Strategy.Assassin_KillCompetitor_IsAheadMult : 1);
 
+        var cardCnts = game.Players.Select(p => p.Hand.Count).Distinct().Order().ToArray();
+        var haveMostCards = cardCnts.Last() == player.Hand.Count && cardCnts.Length > 1;
         var roundHasMage = PickInfo.PossibleCharacters.Any(c => c.Type == CharacterType.Known.Magician);
-        var haveMostCards = game.Players.Max(p => p.Hand.Count) == player.Hand.Count && game.Players.Any(p => p.Hand.Count < player.Hand.Count);
-        if (roundHasMage && haveMostCards && Strategy.Assassin_KillDangerousMage_Score > killCompetitorScore)
+        var isMageOnDangerousSide = (PickInfo.PossibleRightCharacters.Any(c => c.Type == CharacterType.Known.Magician) ? PickInfo.RightHand : PickInfo.LeftHand).Any(p => p.Hand.Count == cardCnts.First());
+        if (haveMostCards && roundHasMage && isMageOnDangerousSide && Strategy.Assassin_KillDangerousMage_Score > killCompetitorScore)
         {
             actions.Assassinate(game.Characters.First(c => c.Type == CharacterType.Known.Magician));
         }
         else
         {
             var scores = GuessCharacterLikelihood(possibleChars, competitor);
-            var tgt = scores.Select(t => (t.character, score: t.likelyhoodScore * Random.Shared.NextDouble())).OrderByDescending(t => t.score).First().character; // Target is random, but weighted towards likely pick
+            var tgt = scores.Select(t => (t.character, score: t.likelyhoodScore)).OrderByDescending(t => t.score).ThenBy(_ => Random.Shared.Next()).First().character;
             actions.Assassinate(tgt);
         }
 
@@ -251,8 +254,8 @@ public class AiPlayerController(Game game, Player player) : PlayerController
             {
                 var scores = GuessCharacterLikelihood(possibleChars, rich);
                 var tgt = scores
-                    .Select(t => (t.character, score: t.likelyhoodScore * Random.Shared.NextDouble())) // Target is random, but weighted towards likely pick
-                    .OrderByDescending(t => t.score)
+                    .Select(t => (t.character, score: t.likelyhoodScore))
+                    .OrderByDescending(t => t.score).ThenBy(_ => Random.Shared.Next())
                     .First().character;
                 actions.Steal(tgt);
                 break;
@@ -391,27 +394,27 @@ public class AiPlayerController(Game game, Player player) : PlayerController
 
     public class StrategyValues
     {
-        public double Pick_AssassinBaseScore { get; set; } = 1;
-        public double Pick_ThiefBaseScore { get; set; } = 0.5;
-        public double Pick_MageBaseScore { get; set; } = 0.5;
-        public double Pick_KingBaseScore { get; set; } = 0.5;
+        public double Pick_AssassinBaseScore { get; set; } = -1;
+        public double Pick_ThiefBaseScore { get; set; } = 0;
+        public double Pick_MageBaseScore { get; set; } = -0.5;
+        public double Pick_KingBaseScore { get; set; } = 0;
         public double Pick_PreacherBaseScore { get; set; } = 0;
         public double Pick_MerchantBaseScore { get; set; } = 0;
-        public double Pick_ArchitectBaseScore { get; set; } = 1;
+        public double Pick_ArchitectBaseScore { get; set; } = 0;
         public double Pick_CondottieroBaseScore { get; set; } = 0;
 
         public double Pick_ProtectGoldMult { get; set; } = 0.5;
-        public double Pick_ProtectHandMult { get; set; } = 0.5;
-        public double Pick_ExtraGoldMult { get; set; } = 1;
+        public double Pick_ProtectHandMult { get; set; } = 0.05;
+        public double Pick_ExtraGoldMult { get; set; } = 2;
 
-        public double Pick_Assassin_KillCompetitorMult { get; set; } = 1;
+        public double Pick_Assassin_KillCompetitorMult { get; set; } = 0.3;
         public double Pick_Thief_ExpectedGoldMult { get; set; } = 1;
-        public double Pick_Mage_CardTradeWinMult { get; set; } = 0.8;
-        public double Pick_Mage_DontNeedCardsMult { get; set; } = 0.333;
-        public double Pick_Mage_NeedCardsMult { get; set; } = 1;
+        public double Pick_Mage_CardTradeWinMult { get; set; } = 1;
+        public double Pick_Mage_DontNeedCardsMult { get; set; } = 0.1;
+        public double Pick_Mage_NeedCardsMult { get; set; } = 2;
         public double Pick_Preacher_Protect1CostBuildingsScore { get; set; } = 1;
-        public double Pick_Architect_NeedCardsScore { get; set; } = 2;
-        public double Pick_Architect_BuildMultipleMult { get; set; } = 2;
+        public double Pick_Architect_NeedCardsScore { get; set; } = 1;
+        public double Pick_Architect_BuildMultipleMult { get; set; } = 1;
         public double Pick_Condottiero_CompetitorHas1CostBuildingsScore { get; set; } = 2;
         public double Pick_Condottiero_CompetitorHasColorBonusScore { get; set; } = 2;
 
@@ -442,15 +445,15 @@ public class AiPlayerController(Game game, Player player) : PlayerController
         /// Flat score bonus applied to given special buildings.
         /// </summary>
         public Dictionary<string, double> Building_IdBonusMap { get; } = new() {
-            [BuildingCardIds.Observatory] = 1.0,    /* draw more cards */
+            [BuildingCardIds.Observatory] = 0,      /* draw more cards */
             [BuildingCardIds.Library] = 1.5,        /* keep more cards */
             [BuildingCardIds.School] = 2.5,         /* color income joker */
-            [BuildingCardIds.CourtOfWonders] = 1.5, /* color bonus joker */
+            [BuildingCardIds.CourtOfWonders] = 0,   /* color bonus joker */
             [BuildingCardIds.DragonGate] = 2.0,     /* +2 points */
             [BuildingCardIds.University] = 2.0,     /* +2 points */
         };
 
-        public double Assassin_KillDangerousMage_Score { get; set; } = 1;
+        public double Assassin_KillDangerousMage_Score { get; set; } = 0.75;
         public double Assassin_KillCompetitor_100pBaseScore { get; set; } = 2;
         public double Assassin_KillCompetitor_IsAheadMult { get; set; } = 1.5;
 
