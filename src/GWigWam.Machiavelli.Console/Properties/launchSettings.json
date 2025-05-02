@@ -2,7 +2,7 @@
   "profiles": {
     "GWigWam.Machiavelli.Console": {
       "commandName": "Project",
-      "commandLineArgs": "--anl"
+      "commandLineArgs": ""
     }
   }
 }

@@ -13,18 +13,19 @@ var resFactory = await AnsiConsole.Status()
     .StartAsync("Loading...", _ => load);
 
 Action single = () => ConsoleGame.Run(resFactory);
-Action anl = () => Analysis.Run(resFactory);
+Action<int?> anl = i => Analysis.Run(resFactory, i);
 
-if (args.Any(a => a.TrimStart('-', '/').Equals("anl", StringComparison.OrdinalIgnoreCase)))
+if (Array.FindIndex(args, a => a.TrimStart('-', '/').Equals("anl", StringComparison.OrdinalIgnoreCase)) is int i and >= 0)
 {
-    anl();
+    var cnt = i + 1 < args.Length && int.TryParse(args[i + 1], out var n) ? n : (int?)null;
+    anl(cnt);
 }
 else
 {
     AnsiConsole.Prompt(new SelectionPrompt<(string, Action)>()
         .AddChoices(
             ("Single game", single),
-            ("Analysis", anl))
+            ("Analysis", () => anl(null)))
         .UseConverter(t => t.Item1))
         .Item2();
 }
