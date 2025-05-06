@@ -47,14 +47,14 @@ public static class Analysis
                 Func<GameStats, Player, double> kingFrac = (gs, p) => gs.PlayerKingCount[p] / (double)gs.Game.Rounds.Count;
                 Func<GameStats, Player, int> fstKing = (gs, p) => gs.Game.Rounds.First().RoundKing == p ? 1 : 0;
 
-                string fPcnt(double v, double max = 1, bool inv = false) => $"[{(Math.Abs((inv ? 1 : 0) - (v / max)) is var f ? f > 0.8 ? "red" : f > 0.6 ? "darkorange" : f > 0.4 ? "yellow" : f > 0.2 ? "green" : "lime" : "")}]{v:P2}[/]";
+                string fPcnt(double v, double min = 0, double max = 1, bool inv = false) => $"[{(Math.Abs((inv ? 1 : 0) - ((v - min) / (max - min))) is var f ? f > 0.8 ? "red" : f > 0.6 ? "darkorange" : f > 0.4 ? "yellow" : f > 0.2 ? "green" : "lime" : "")}]{v:P2}[/]";
 
                 var tableKing = new Table();
                 tableKing.AddColumns("Position", "King rounds", "Game start player");
-                tableKing.AddRow("Frst", fPcnt(playerStat(isFst, kingFrac, v => v.Average()), 0.3, true), fPcnt(playerStat(isFst, fstKing, v => v.Sum() / (double)v.Count()), 0.3, true));
-                tableKing.AddRow(">50%", fPcnt(playerStat(isTop, kingFrac, v => v.Average()), 0.3, true), fPcnt(playerStat(isTop, fstKing, v => v.Sum() / (double)v.Count()), 0.3, true));
-                tableKing.AddRow("<50%", fPcnt(playerStat(isBot, kingFrac, v => v.Average()), 0.3, true), fPcnt(playerStat(isBot, fstKing, v => v.Sum() / (double)v.Count()), 0.3, true));
-                tableKing.AddRow("Last", fPcnt(playerStat(isLst, kingFrac, v => v.Average()), 0.3, true), fPcnt(playerStat(isLst, fstKing, v => v.Sum() / (double)v.Count()), 0.3, true));
+                tableKing.AddRow("Frst", fPcnt(playerStat(isFst, kingFrac, v => v.Average()), 0.175, 0.25, true), fPcnt(playerStat(isFst, fstKing, v => v.Sum() / (double)v.Count()), 0.15, 0.3, true));
+                tableKing.AddRow(">50%", fPcnt(playerStat(isTop, kingFrac, v => v.Average()), 0.175, 0.25, true), fPcnt(playerStat(isTop, fstKing, v => v.Sum() / (double)v.Count()), 0.15, 0.3, true));
+                tableKing.AddRow("<50%", fPcnt(playerStat(isBot, kingFrac, v => v.Average()), 0.175, 0.25, true), fPcnt(playerStat(isBot, fstKing, v => v.Sum() / (double)v.Count()), 0.15, 0.3, true));
+                tableKing.AddRow("Last", fPcnt(playerStat(isLst, kingFrac, v => v.Average()), 0.175, 0.25, true), fPcnt(playerStat(isLst, fstKing, v => v.Sum() / (double)v.Count()), 0.15, 0.3, true));
                 renderables.Add(tableKing);
                 t2.Value++;
 
@@ -66,7 +66,7 @@ public static class Analysis
                     foreach (var c in CharacterType.Known.All)
                     {
                         var charCount = playerStat(pred, (gs, p) => gs.PlayerPickCount[(p, c)] / (double)gs.Game.Rounds.Count, v => v.Average());
-                        row.Add(new Markup(fPcnt(charCount, 0.2, true)));
+                        row.Add(new Markup(fPcnt(charCount, 0.0, 0.2, true)));
                     }
                     tableChar.AddRow(row);
                 }
@@ -78,12 +78,12 @@ public static class Analysis
                 foreach (var ch in CharacterType.Known.All)
                 {
                     var dsc = localRes.Characters.First(c => c.Type == ch).Description;
-                    var at = fPcnt(stats.Average(s => s.AssassinTargets[ch].target), 0.25);
+                    var at = fPcnt(stats.Average(s => s.AssassinTargets[ch].target), 0.0, 0.25);
                     var aht = stats.Select(s => s.AssassinTargets[ch].hit).Where(d => d != null).ToArray();
-                    var ah = aht.Length > 0 ? fPcnt(aht.Average(s => s!.Value), 0.75) : "-";
-                    var tt = fPcnt(stats.Average(s => s.ThiefTargets[ch].target), 0.25);
+                    var ah = aht.Length > 0 ? fPcnt(aht.Average(s => s!.Value), 0.6, 0.8) : "-";
+                    var tt = fPcnt(stats.Average(s => s.ThiefTargets[ch].target), 0, 0.35);
                     var tht = stats.Select(s => s.ThiefTargets[ch].hit).Where(d => d != null).ToArray();
-                    var th = tht.Length > 0 ? fPcnt(tht.Average(s => s!.Value), 0.75) : "-";
+                    var th = tht.Length > 0 ? fPcnt(tht.Average(s => s!.Value), 0.5, 0.8) : "-";
                     tableVictims.AddRow(dsc, at, ah, tt, th);
                 }
                 var aha = fPcnt(stats.SelectMany(s => s.AssassinTargets.Values.Where(t => t.hit != null).Select(t => t.hit!.Value)).Average(), 0.75);
@@ -94,16 +94,24 @@ public static class Analysis
 
                 var builtStat = stats.SelectMany(gs => gs.BuiltCards)
                     .GroupBy(t => t.card)
-                    .Select(g => (g.Key, bFrac: g.Sum(t => t.builtFrac) / g.Count(), wFrac: g.Sum(t => t.winnerBuilt) / g.Count(), lFrac: g.Sum(t => t.loserBuilt) / g.Count()))
-                    .Select(t => (card: t.Key, t.bFrac, t.wFrac, wDiff: t.wFrac / t.bFrac, t.lFrac, lDiff: t.lFrac / t.bFrac))
+                    .Select(g => (g.Key, bFrac: g.Sum(t => t.builtFrac) / g.Count(), wFrac: g.Sum(t => t.winnerBuilt) / g.Count(), lFrac: g.Sum(t => t.loserBuilt) / g.Count(), wsFrac: g.Sum(t => t.winerStart) / g.Count()))
+                    .Select(t => (card: t.Key, t.bFrac, t.wFrac, wDiff: t.wFrac / t.bFrac, t.lFrac, lDiff: t.lFrac / t.bFrac, t.wsFrac))
                     .OrderByDescending(t => t.wDiff)
                     .ToArray();
 
                 var tableBuilt = new Table();
-                tableBuilt.AddColumns("Building", "Cnt", "Was built", "Winner built", "Diff", "Loser built", "Diff");
+                tableBuilt.AddColumns("Building", "Cnt", "Was built", "Winner built", "Diff", "Loser built", "Diff", "Winner start hand");
                 foreach (var tpl in builtStat)
                 {
-                    tableBuilt.AddRow(tpl.card.ToMarkup(), $"{tpl.card.Count}", fPcnt(tpl.bFrac, 0.5, true), fPcnt(tpl.wFrac, 0.15, true), fPcnt(tpl.wDiff, 0.35, true), fPcnt(tpl.lFrac, 0.15), fPcnt(tpl.lDiff, 0.35));
+                    tableBuilt.AddRow(
+                        tpl.card.ToMarkup(),
+                        $"{tpl.card.Count}",
+                        fPcnt(tpl.bFrac, 0.4, 0.6, true),
+                        fPcnt(tpl.wFrac, 0.1, 0.15, true),
+                        fPcnt(tpl.wDiff, 0.2, 0.35, true),
+                        fPcnt(tpl.lFrac, 0.0, 0.15),
+                        fPcnt(tpl.lDiff, 0.05, 0.2),
+                        fPcnt(tpl.wsFrac, 0.04, 0.08, true));
                 }
                 renderables.Add(tableBuilt);
                 t2.Value++;
@@ -114,6 +122,8 @@ public static class Analysis
 
     private static GameStats RecordGame(Game game, Resources localRes)
     {
+        var startingHand = game.Players.ToDictionary(p => p, p => p.Hand.ToArray());
+
         Player[] standings = null!;
         game.GameOver += s => standings = s;
 
@@ -151,7 +161,8 @@ public static class Analysis
                 var bc = builtl.Where(t => t.building == c).Count() / (double)c.Count;
                 var win = builtl.Where(t => t.building == c && t.player == standings.First()).Count() / (double)c.Count;
                 var los = builtl.Where(t => t.building == c && t.player == standings.Last()).Count() / (double)c.Count;
-                return (c, bc, win, los);
+                var winStart = startingHand[standings.First()].Where(s => s == c).Count() / (double)c.Count;
+                return (c, bc, win, los, winStart);
             }).ToArray();
 
         return new(game, standings, playerPickCount, playerKingCount, aFrac, tFrac, built);
@@ -164,6 +175,6 @@ public static class Analysis
         Dictionary<Player, int> PlayerKingCount,
         Dictionary<CharacterType, (double target, double? hit)> AssassinTargets,
         Dictionary<CharacterType, (double target, double? hit)> ThiefTargets,
-        (BuildingCard card, double builtFrac, double winnerBuilt, double loserBuilt)[] BuiltCards
+        (BuildingCard card, double builtFrac, double winnerBuilt, double loserBuilt, double winerStart)[] BuiltCards
     );
 }
