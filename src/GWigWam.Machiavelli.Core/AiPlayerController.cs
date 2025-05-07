@@ -127,9 +127,10 @@ public class AiPlayerController(Game game, Player player) : PlayerController
     public override IEnumerable<BuildingCardInstance> PickBuildingCards(BuildingCardInstance[] cards, int count)
         => cards.OrderBy(bi => ScoreBuilding(bi, availableGold: player.Gold, evalColorsInHand: true)).Take(count);
 
-    private void GetGoldOrCards(BasePlayerActions actions)
+    private void GetGoldOrCards(BasePlayerActions actions, BuildingColor? color = null)
     {
-        var prioCards = player.Hand.Sum(b => b.Card.Cost) <= player.Gold + 2;
+        var expGold = player.Gold + 2 + (color is BuildingColor col ? Gameplay.CalcBuildingIncome(player.City, col) : 0);
+        var prioCards = player.Hand.Sum(b => b.Card.Cost) <= expGold;
         (prioCards ? actions.GetCards : actions.GetGold)();
     }
 
@@ -295,14 +296,14 @@ public class AiPlayerController(Game game, Player player) : PlayerController
 
     public override void PlayKing(Round round, KingActions actions)
     {
-        GetGoldOrCards(actions);
+        GetGoldOrCards(actions, BuildingColor.Yellow);
         MaybeBuild(actions, BuildingColor.Yellow);
         actions.GetBuildingsGold();
     }
 
     public override void PlayPreacher(Round round, PreacherActions actions)
     {
-        GetGoldOrCards(actions);
+        GetGoldOrCards(actions, BuildingColor.Blue);
         MaybeBuild(actions, BuildingColor.Blue);
         actions.GetBuildingsGold();
     }
@@ -310,7 +311,7 @@ public class AiPlayerController(Game game, Player player) : PlayerController
     public override void PlayMerchant(Round round, MerchantActions actions)
     {
         actions.GetExtraGold();
-        GetGoldOrCards(actions);
+        GetGoldOrCards(actions, BuildingColor.Green);
         MaybeBuild(actions, BuildingColor.Green);
         actions.GetBuildingsGold();
     }
@@ -366,7 +367,7 @@ public class AiPlayerController(Game game, Player player) : PlayerController
 
     public override void PlayCondottiero(Round round, CondottieroActions actions)
     {
-        GetGoldOrCards(actions);
+        GetGoldOrCards(actions, BuildingColor.Red);
         MaybeBuild(actions, BuildingColor.Red);
         actions.GetBuildingsGold();
 
