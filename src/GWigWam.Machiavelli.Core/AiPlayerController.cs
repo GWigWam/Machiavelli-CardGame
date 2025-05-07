@@ -111,6 +111,7 @@ public class AiPlayerController(Game game, Player player) : PlayerController
 
         var score = 0 - (diff > 0 ? diffAbs * Strategy.Building_SurplusPenaltyMult : diffAbs * Strategy.Building_DeficitPenaltyMult);
 
+        score += Strategy.Building_PreferColorScore[card.Color];
         score += Strategy.Building_IdBonusMap.TryGetValue(card.Id, out var bonus) ? bonus : 0;
 
         var buildings = evalColorsInHand ? player.City.Concat(player.Hand) : player.City;
@@ -439,6 +440,15 @@ public class AiPlayerController(Game game, Player player) : PlayerController
         /// Score bonus for buildings which result in an extra gold income this turn.
         /// </summary>
         public double Building_ImmediateExtraGoldScore { get; set; } = 1;
+
+        public Dictionary<BuildingColor, double> Building_PreferColorScore { get; } = new() {
+            [BuildingColor.Blue] =   1.25,
+            [BuildingColor.Green] =  1.0,
+            [BuildingColor.Red] =    1.30,
+            [BuildingColor.Yellow] = 1.25,
+            [BuildingColor.Purple] = 0.75
+        };
+
         /// <summary>
         /// Flat score bonus applied to given special buildings.
         /// </summary>
