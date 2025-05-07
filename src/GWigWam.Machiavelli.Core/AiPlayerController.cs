@@ -134,10 +134,6 @@ public class AiPlayerController(Game game, Player player) : PlayerController
 
     /// <summary>
     /// Generic build action function for all characters except Architect.<br />
-    /// Always attempts to build if possible (i.e: does not save up). Conceivably the AI could have behavior for saving, but this is generally ill-advised because:
-    ///     (1) more chance to get gold or cards stolen, and
-    ///     (2) having many cheap buildings is better than having a few expensive ones because of color bonus in points and income.
-    /// <br /> <br />
     /// May call <see cref="ColoredPlayerActions.GetBuildingsGold"/> but is not guaranteed to!
     /// </summary>
     private void MaybeBuild(BasePlayerActions actions, BuildingColor? playerColor = null)
@@ -152,32 +148,30 @@ public class AiPlayerController(Game game, Player player) : PlayerController
                     .Select(c => (c, score: ScoreBuilding(c.Card, availableGold: player.Gold)))
                     .OrderByDescending(t => t.score).FirstOrDefault().c;
                 var buildAfterExtraGold = player.Hand
-                    .Where(c => c.Card.Cost <= player.Gold + extraNow)
                     .Select(c => (c, score: ScoreBuilding(c.Card, availableGold: player.Gold + extraNow)))
-                    .OrderByDescending(t => t.score).ToArray();
+                    .OrderByDescending(t => t.score).ThenBy(t => t.c.Card.Cost).ToArray();
 
                 // Choose between 2 options
                 //  1: Buy building in character's color, then collect character-color gold; this results in 1 more gold than the other way round.
                 //  2: Collect character-color gold first to afford a more expensive (better building); if the built building is of the character's color no gold can be gained from it this turn. 
-                if (buildBeforeExtraGold is BuildingCardInstance bb && buildAfterExtraGold.First(t => t.c == bb).score >= buildAfterExtraGold.Average(t => t.score))
+                if (buildBeforeExtraGold is BuildingCardInstance bb && (buildAfterExtraGold.First(t => t.c == bb).score + Strategy.Building_ImmediateExtraGoldScore) >= buildAfterExtraGold[0].score)
                 {
-                    actions.Build(buildBeforeExtraGold);
+                    actions.Build(bb);
                     cpAct.GetBuildingsGold();
                 }
                 else if (buildAfterExtraGold.Length > 0)
                 {
                     cpAct.GetBuildingsGold();
-                    actions.Build(buildAfterExtraGold[0].c);
+                    if (buildAfterExtraGold[0].c.Card.Cost <= player.Gold)
+                    {
+                        actions.Build(buildAfterExtraGold[0].c);
+                    }
                 }
             }
             else
             {
-                // Generic logic, build best building player can afford.
-                var build = player.Hand
-                    .Where(c => c.Card.Cost <= player.Gold)
-                    .OrderByDescending(c => ScoreBuilding(c.Card, availableGold: player.Gold))
-                    .FirstOrDefault();
-                if (build != null)
+                var ranked = player.Hand.OrderByDescending(c => ScoreBuilding(c.Card, availableGold: player.Gold)).ToArray();
+                if (ranked.FirstOrDefault() is BuildingCardInstance build && build.Card.Cost <= player.Gold)
                 {
                     actions.Build(build);
                 }
@@ -432,15 +426,19 @@ public class AiPlayerController(Game game, Player player) : PlayerController
         /// Score penalty for buildings which are cheaper than can be afforded.
         /// Multiplied with the difference, 0 for no effect.
         /// </summary>
-        public double Building_SurplusPenaltyMult { get; set; } = 0.75;
+        public double Building_SurplusPenaltyMult { get; set; } = 0.5;
         /// <summary>
         /// Score penalty subtracted for buildings which can be destroyed for free (cost <= 1) by the condottiero.
         /// </summary>
-        public double Building_FreeDestructionPenalty { get; set; } = 0.5;
+        public double Building_FreeDestructionPenalty { get; set; } = 0.75;
         /// <summary>
         /// Bonus score applied to a building if it's color is missing (not in city or hand), bonus is divided by number of colors still missing. 
         /// </summary>
         public double Building_MissingColorScore { get; set; } = 2;
+        /// <summary>
+        /// Score bonus for buildings which result in an extra gold income this turn.
+        /// </summary>
+        public double Building_ImmediateExtraGoldScore { get; set; } = 1;
         /// <summary>
         /// Flat score bonus applied to given special buildings.
         /// </summary>
