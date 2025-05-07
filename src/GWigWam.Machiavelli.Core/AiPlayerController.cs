@@ -183,22 +183,32 @@ public class AiPlayerController(Game game, Player player) : PlayerController
     /// <summary>
     /// Infers which character <paramref name="target"/> player may have picked based on their position.
     /// </summary>
-    private IEnumerable<(Character character, double likelyhoodScore)> GuessCharacterLikelihood(IEnumerable<Character> possiblePicks, Player target) => possiblePicks
-        .Select(c =>
+    private IEnumerable<(Character character, double likelyhoodScore)> GuessCharacterLikelihood(IEnumerable<Character> possiblePicks, Player target) => possiblePicks.Select(character =>
+    {
+        var score = 0.0;
+        // Pick frequency
+        if (game.Rounds.Count is int rCount and >= 3)
         {
-            var score = c.Type.Id switch
-            {
-                CharacterType.Ids.Thief => game.Players.Any(p => p.Gold >= 4) ? 2 : 1,
-                CharacterType.Ids.Magician => target.Hand.Count < 3 ? 0.5 : 0.2,
-                CharacterType.Ids.King => Gameplay.CalcBuildingIncome(target.City, BuildingColor.Yellow) is var by and > 0 ? (1.5 + (by / 2.0)) : 1.5,
-                CharacterType.Ids.Preacher => Gameplay.CalcBuildingIncome(target.City, BuildingColor.Blue) is var bb and > 0 ? (1.0 + (bb / 2.0)) : 1,
-                CharacterType.Ids.Merchant => Gameplay.CalcBuildingIncome(target.City, BuildingColor.Green) is var bg and > 0 ? (2 + (bg / 2.0)) : 2,
-                CharacterType.Ids.Architect => 1,
-                CharacterType.Ids.Condottiero => Gameplay.CalcBuildingIncome(target.City, BuildingColor.Red) is var br and > 0 ? (1.0 + (br / 2.0)) : 1,
-                _ => 1
-            };
-            return (c, score);
-        });
+            var pCnt = game.Rounds.Take(rCount - 1).Sum(r => r.PlayerPick[target].Type == character.Type ? 1 : 0);
+            var freq = pCnt / (double)(rCount - 1);
+            var freqNormal = freq * 8; // Baseline pick freq is 1/8 b/c of the no characters, normalize ~1
+            score += freqNormal * Strategy.GuessCharacter_PrevFreqMult;
+        }
+        // Extra gold
+        score += character.Type.Id switch
+        {
+            CharacterType.Ids.King => Gameplay.CalcBuildingIncome(target.City, BuildingColor.Yellow) * Strategy.GuessCharacter_ExtraGoldMult,
+            CharacterType.Ids.Preacher => Gameplay.CalcBuildingIncome(target.City, BuildingColor.Blue) * Strategy.GuessCharacter_ExtraGoldMult,
+            CharacterType.Ids.Merchant => (Gameplay.CalcBuildingIncome(target.City, BuildingColor.Green) + 1) * Strategy.GuessCharacter_ExtraGoldMult,
+            CharacterType.Ids.Condottiero => Gameplay.CalcBuildingIncome(target.City, BuildingColor.Red) * Strategy.GuessCharacter_ExtraGoldMult,
+            _ => 0
+        };
+        // Frew cards
+        score += target.Hand.Count <= 1 ?
+            character.Type == CharacterType.Known.Magician ? Strategy.GuessCharacter_FewCardsScore_Mage :
+            character.Type == CharacterType.Known.Architect ? Strategy.GuessCharacter_FewCardsScore_Architect : 0 : 0;
+        return (character, score);
+    });
 
     public override void PlayAssassin(Round round, AssassinActions actions)
     {
@@ -460,6 +470,11 @@ public class AiPlayerController(Game game, Player player) : PlayerController
             [BuildingCardIds.DragonGate] = 2.0,     /* +2 points */
             [BuildingCardIds.University] = 2.0,     /* +2 points */
         };
+
+        public double GuessCharacter_PrevFreqMult { get; set; } = 1;
+        public double GuessCharacter_ExtraGoldMult { get; set; } = 1;
+        public double GuessCharacter_FewCardsScore_Mage { get; set; } = 1.5;
+        public double GuessCharacter_FewCardsScore_Architect { get; set; } = 2.0;
 
         public double Assassin_KillDangerousMage_Score { get; set; } = 0.75;
         public double Assassin_KillCompetitor_100pBaseScore { get; set; } = 2;
