@@ -330,14 +330,22 @@ public class AiPlayerController(Game game, Player player) : PlayerController
             {
                 var goldLeft = player.Gold - c.Sum(b => b.Card.Cost);
                 var score = c.Average(b => ScoreBuilding(b, b.Card.Cost + goldLeft));
-                return (score, combo: c, finish: player.City.Count + c.Length >= 8);
+                var finish = player.City.Count + c.Length >= 8;
+                var finishPoints = finish ? game.Finished.Any() ? 2 : 4 : 0;
+                var gainColorBonus = !player.HasAllColorsBonus && player.City.Concat(c).Select(b => b.Card.Color).Distinct().Count() == 5 ? 3 : 0;
+                var points = Gameplay.GetBuildingPoints(c) + finishPoints + gainColorBonus;
+                return (combo: c, score, points, finish);
             })
-            .OrderBy(t => t.finish ? 0 : 1).ThenByDescending(t => t.score)
             .ToArray();
         if (combos.Length > 0)
         {
-            var combo = combos[0].combo;
-            foreach (var b in combo)
+            // Normally the combo with the most 'score' is picked (which takes into account long-term utility)
+            // However, the architect can rush to finish to get the 4-points 'finish first' bonus, in such a case combos are ranked by objective point-value not score
+            var bestScore = combos.OrderByDescending(t => t.score).First();
+            var bestPoints = combos.OrderByDescending(t => t.points).First();
+            var bestFinishPoints = combos.Where(t => t.finish).OrderByDescending(t => t.points).FirstOrDefault();
+            var best = combos.Any(t => t.finish) ? bestFinishPoints.points >= bestPoints.points ? bestFinishPoints : bestScore : bestScore;
+            foreach (var b in best.combo)
             {
                 actions.Build(b);
             }
