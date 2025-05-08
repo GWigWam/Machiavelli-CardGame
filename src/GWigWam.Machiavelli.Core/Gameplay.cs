@@ -18,4 +18,9 @@ public static class Gameplay
     /// <returns></returns>
     public static int GetPlayerNoCardsToPick(Player player, int nrChooseFrom)
         => player.City.Any(c => c.Card.Id == BuildingCardIds.Library) ? nrChooseFrom : 1;
+
+    public static int GetBuildingPoints(BuildingCard card)
+        => card.Cost + (card.Id == BuildingCardIds.DragonGate || card.Id == BuildingCardIds.University ? 2 : 0);
+    public static int GetBuildingPoints(IEnumerable<BuildingCard> cards) => cards.Sum(GetBuildingPoints);
+    public static int GetBuildingPoints(IEnumerable<BuildingCardInstance> cards) => cards.Sum(b => GetBuildingPoints(b));
 }
