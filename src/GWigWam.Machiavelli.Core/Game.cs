@@ -15,7 +15,7 @@ public class Game
     private IReadOnlyDictionary<Player, PlayerController>? controllers;
     public IReadOnlyDictionary<Player, PlayerController> Controllers {
         get => controllers ?? throw new InvalidOperationException($"get {nameof(Game)}.{nameof(Controllers)} called, but it has not yet been initialized: do so before starting the game.");
-        set => controllers = controllers == null ? value : throw new InvalidOperationException($"Cannot change {nameof(Controllers)} afer it has been set.");
+        set => controllers = controllers == null ? value : throw new InvalidOperationException($"Cannot change {nameof(Controllers)} after it has been set.");
     }
 
     public Deck Deck { get; }
@@ -61,7 +61,7 @@ public class Game
         round.Play();
         AfterRound?.Invoke(round);
 
-        if (Finished.Count > 0)
+        if (Finished.Count > 0 || Rounds.Count >= 50)
         {
             var standings = GetStandings();
             GameOver?.Invoke(standings);

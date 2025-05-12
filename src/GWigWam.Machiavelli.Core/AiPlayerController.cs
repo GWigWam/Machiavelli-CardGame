@@ -1,7 +1,7 @@
 ﻿namespace GWigWam.Machiavelli.Core;
-public class AiPlayerController(Game game, Player player) : PlayerController
+public class AiPlayerController(Game game, Player player, AiPlayerController.StrategyValues? strategy = null) : PlayerController
 {
-    public StrategyValues Strategy { get; set; } = new();
+    public StrategyValues Strategy { get; set; } = strategy ?? new();
 
     private PickPositionInfo PickInfo { get; set; } = null!;
 

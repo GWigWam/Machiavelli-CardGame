@@ -1,18 +1,18 @@
 ﻿namespace GWigWam.Machiavelli.Console;
 public static class ConsoleGame
 {
-    public static void Run(Func<Resources> resFactory)
+    public static void Run(Func<Resources> resFactory, AiPlayerController.StrategyValues? strat = null)
     {
+        var human = YNPrompt("Include human player?");
         for (int g = 1; true; g++)
         {
-            var human = YNPrompt("Include human player?");
             var noPlayers = AnsiConsole.Prompt(new TextPrompt<int>("Number of players: ").Validate(i => i > 2 && i <= 7).DefaultValue(4));
             AnsiConsole.MarkupLine($" --- Game #{g} ---");
 
             var (deck, chars) = resFactory();
             var game = new Game(deck, chars, noPlayers);
             game.Setup();
-            var controllerDict = game.Players.Select(p => (p, c: new AiPlayerController(game, p))).ToDictionary(t => t.p, t => (PlayerController)t.c);
+            var controllerDict = game.Players.Select(p => (p, c: new AiPlayerController(game, p, strat))).ToDictionary(t => t.p, t => (PlayerController)t.c);
             if (human)
             {
                 controllerDict[game.Players[0]] = new ConsolePlayerController(game, game.Players[0]);

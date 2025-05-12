@@ -191,13 +191,19 @@ internal class ConsolePlayerController : PlayerController
         {
             var p = AnsiConsole.Prompt(new SelectionPrompt<Player>()
                 .Title("Player: ")
-                .AddChoices(Game.Players.Where(p => p != Self && p.City.Count > 0 && round.PlayerPick[p].Type != CharacterType.Known.Preacher))
-                .UseConverter(p => $"{p.ToMarkup(Game)} (Buildings: {p.City.Count}; Score: {p.Score})"));
-            var b = AnsiConsole.Prompt(new SelectionPrompt<BuildingCardInstance>()
-                .Title("Building: ")
-                .AddChoices(p.City)
-                .UseConverter(c => $"{c.Card.ToMarkup()} ({c.Card.Cost-1}:coin:)"));
-            actions.DestroyBuilding(b);
+                .AddChoices(Game.Players.Where(p => p != Self && p.City.Count > 0 && round.PlayerPick[p].Type != CharacterType.Known.Preacher).Concat([null!]))
+                .UseConverter(p => p != null ? $"{p.ToMarkup(Game)} (Buildings: {p.City.Count}; Score: {p.Score})" : "Cancel"));
+            if (p != null)
+            {
+                var b = AnsiConsole.Prompt(new SelectionPrompt<BuildingCardInstance>()
+                    .Title("Building: ")
+                    .AddChoices(p.City.Concat([null!]))
+                    .UseConverter(c => c != null ? $"{c.Card.ToMarkup()} ({c.Card.Cost - 1}:coin:)" : "Cancel"));
+                if (b != null)
+                {
+                    actions.DestroyBuilding(b);
+                }
+            }
         }
         PlayTurn(round, actions, GetGetExtraGoldAction(BuildingColor.Red, actions), ("Destroy building", once: false, destroy));
     }
