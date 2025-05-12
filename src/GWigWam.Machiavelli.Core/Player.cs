@@ -11,20 +11,39 @@ public class Player(Game game, int id)
     public int Gold { get; set; } = 0;
 
     public List<BuildingCardInstance> Hand { get; } = [];
-    public List<BuildingCardInstance> City { get; } = [];
 
-    public bool HasAllColorsBonus {
-        get => City.Select(c => c.Card.Color).Distinct().Count() == 5 ||
-            (City.Any(b => b.Card.Id == BuildingCardIds.CourtOfWonders) && City.Where(c => c.Card.Id != BuildingCardIds.CourtOfWonders).Select(c => c.Card.Color).Distinct().Count() == 4); // Court of Wonders bonus: counts as any 1 color at the end of the game;
-    }
+    private readonly List<BuildingCardInstance> _City = [];
+    public IReadOnlyList<BuildingCardInstance> City => _City;
 
-    public int CityScore => Gameplay.GetBuildingPoints(City);
+    public bool HasAllColorsBonus { get; private set; }
+    public int CityScore { get; private set; } = 0;
     public int Score => CalcScore();
+
+    private bool hasCOW = false;
 
     public void Setup(IEnumerable<BuildingCardInstance> cards, int startingGold)
     {
         Hand.AddRange(cards);
         Gold = startingGold;
+    }
+
+    public void AddBuilding(BuildingCardInstance building)
+    {
+        _City.Add(building);
+        CityScore += Gameplay.GetBuildingPoints(building);
+        HasAllColorsBonus = CalcHasColorBonus();
+        hasCOW = hasCOW || building.Card.Id == BuildingCardIds.CourtOfWonders;
+    }
+
+    public void RemoveBuilding(BuildingCardInstance building)
+    {
+        if (_City.IndexOf(building) is int ix and >= 0)
+        {
+            _City.RemoveAt(ix);
+            CityScore -= Gameplay.GetBuildingPoints(building);
+            HasAllColorsBonus = CalcHasColorBonus();
+            hasCOW = hasCOW && building.Card.Id != BuildingCardIds.CourtOfWonders;
+        }
     }
 
     private int CalcScore()
@@ -39,4 +58,7 @@ public class Player(Game game, int id)
 
         return fBonus + cBonus + city;
     }
+
+    private bool CalcHasColorBonus() => City.Select(c => c.Card.Color).Distinct().Count() == 5 ||
+        (hasCOW && City.Where(c => c.Card.Id != BuildingCardIds.CourtOfWonders).Select(c => c.Card.Color).Distinct().Count() == 4); // Court of Wonders bonus: counts as any 1 color at the end of the game;
 }

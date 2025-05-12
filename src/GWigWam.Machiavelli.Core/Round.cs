@@ -138,7 +138,7 @@ public class Round(Game game, int number)
         {
             player.Gold -= card.Card.Cost;
             player.Hand.Remove(card);
-            player.City.Add(card);
+            player.AddBuilding(card);
             OnBuild?.Invoke(player, card);
             if (player.City.Count == 8) // Game ends when one player has 8 buildings
             {
@@ -237,7 +237,7 @@ public class Round(Game game, int number)
             if (player.Gold >= destCost && PlayerPick[target].Type != CharacterType.Known.Preacher)
             {
                 player.Gold -= destCost;
-                target.City.Remove(building);
+                target.RemoveBuilding(building);
                 game.Deck.Discard(building);
                 OnCondottieroDestroyBuildingAction?.Invoke(player, target, building);
                 return true;
