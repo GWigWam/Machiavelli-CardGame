@@ -59,6 +59,6 @@ public class Player(Game game, int id)
         return fBonus + cBonus + city;
     }
 
-    private bool CalcHasColorBonus() => City.Select(c => c.Card.Color).Distinct().Count() == 5 ||
+    private bool CalcHasColorBonus() => City.Aggregate(BuildingColor.None, (acc, cur) => acc | cur.Card.Color) == BuildingColor.All ||
         (hasCOW && City.Where(c => c.Card.Id != BuildingCardIds.CourtOfWonders).Select(c => c.Card.Color).Distinct().Count() == 4); // Court of Wonders bonus: counts as any 1 color at the end of the game;
 }

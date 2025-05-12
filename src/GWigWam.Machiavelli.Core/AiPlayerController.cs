@@ -115,9 +115,9 @@ public class AiPlayerController(Game game, Player player, AiPlayerController.Str
         score += Strategy.Building_IdBonusMap.TryGetValue(card.Id, out var bonus) ? bonus : 0;
 
         var buildings = evalColorsInHand ? player.City.Concat(player.Hand) : player.City;
-        var missing = Enumerable.Except([BuildingColor.Blue, BuildingColor.Green, BuildingColor.Red, BuildingColor.Yellow, BuildingColor.Purple], buildings.Select(c => c.Card.Color)).ToArray();
-        var isMissingColor = missing.Contains(card.Color);
-        score += isMissingColor ? Strategy.Building_MissingColorScore / missing.Length : 0;
+        var hasColors = buildings.Aggregate(BuildingColor.None, (acc, cur) => acc | cur.Card.Color);
+        var isMissingColor = (hasColors & card.Color) == BuildingColor.None;
+        score += isMissingColor ? Strategy.Building_MissingColorScore / (5 - byte.PopCount((byte)hasColors)) : 0;
 
         score -= card.Cost <= 1 ? Strategy.Building_FreeDestructionPenalty : 0;
 
@@ -332,7 +332,7 @@ public class AiPlayerController(Game game, Player player, AiPlayerController.Str
                 var score = c.Average(b => ScoreBuilding(b, b.Card.Cost + goldLeft));
                 var finish = player.City.Count + c.Length >= 8;
                 var finishPoints = finish ? game.Finished.Any() ? 2 : 4 : 0;
-                var gainColorBonus = !player.HasAllColorsBonus && player.City.Concat(c).Select(b => b.Card.Color).Distinct().Count() == 5 ? 3 : 0;
+                var gainColorBonus = !player.HasAllColorsBonus && player.City.Select(b => b.Card.Color).Concat(c.Select(b => b.Card.Color)).Aggregate((acc, cur) => acc | cur) == BuildingColor.All ? 3 : 0;
                 var points = Gameplay.GetBuildingPoints(c) + finishPoints + gainColorBonus;
                 return (combo: c, score, points, finish);
             })

@@ -10,12 +10,16 @@ public record BuildingCard(string Id, string Description, BuildingColor Color, i
 
 public record BuildingCardInstance(BuildingCard Card, int Id);
 
-public enum BuildingColor {
-    Blue,
-    Green,
-    Red,
-    Yellow,
-    Purple
+public enum BuildingColor : byte
+{
+    Blue    = 0b_00000001,
+    Green   = 0b_00000010,
+    Red     = 0b_00000100,
+    Yellow  = 0b_00001000,
+    Purple  = 0b_00010000,
+
+    None    = 0b_00000000,
+    All     = Blue | Green | Red | Yellow | Purple,
 }
 
 public static class BuildingCardIds
